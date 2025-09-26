@@ -1,0 +1,52 @@
+{
+  "ALEM01": {
+    "code": "ALEM01",
+    "message": "Empty Field",
+    "details": "This field is required and cannot be empty."
+  },
+  "ALEM02": {
+    "code": "ALEM02",
+    "message": "Invalid Field",
+    "details": "This field format is invalid."
+  },
+  "ALEM03": {
+    "code": "ALEM03",
+    "message": "Too Short",
+    "details": "This field value is too short."
+  },
+  "ALEM04": {
+    "code": "ALEM04",
+    "message": "Too Long",
+    "details": "This field value is too long."
+  },
+  "ALEM05": {
+    "code": "ALEM05",
+    "message": "Unknown Field",
+    "details": "This field is not allowed in the request."
+  },
+  "EMAIL01": {
+    "code": "EMAIL01",
+    "message": "Invalid Email",
+    "details": "Please provide a valid email address."
+  },
+  "PASS01": {
+    "code": "PASS01",
+    "message": "Password Complexity",
+    "details": "Password must contain at least one uppercase letter, one number, and one special character"
+  },
+  "PASS02": {
+    "code": "PASS02",
+    "message": "Password Too Short",
+    "details": "Password must be at least 8 characters long."
+  },
+  "STU01": {
+    "code": "STU01",
+    "message": "Invalid Student ID",
+    "details": "Student ID must be a valid format."
+  },
+  "ACC01": {
+    "code": "ACC01",
+    "message": "Invalid Account Type",
+    "details": "Account type must be a valid integer."
+  }
+}
