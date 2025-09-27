@@ -33,7 +33,7 @@ async function executeSqlFile(queryRunner: QueryRunner, fileRelativePath: string
 export const dummyDataSeed: Seed = {
   name: 'dummy-data',
   async run(queryRunner: QueryRunner) {
-    await executeSqlFile(queryRunner, 'initdb/02-seed-data.sql');
+    await executeSqlFile(queryRunner, 'initdb/01-career-seed-data.sql');
   },
 };
 
