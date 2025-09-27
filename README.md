@@ -27,7 +27,7 @@ There are three main approaches to run the application, each suited for differen
 ### Option 1: Full Docker Setup
 **Use case**: Quick setup, production-like environment, or when you don't want to manage local dependencies.
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 - Runs both the NestJS application and PostgreSQL database in Docker containers
 - Everything is containerized and isolated
@@ -36,7 +36,7 @@ docker-compose up --build
 ### Option 2: Hybrid Setup (Recommended for Development)
 **Use case**: Active development with faster iteration cycles while maintaining database consistency.
 ```bash
-docker-compose up db && npm run start:dev
+docker compose up postgres-db && npm run start:dev
 ```
 - Database runs in Docker (consistent, isolated)
 - NestJS app runs locally with hot-reload

@@ -26,6 +26,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
     // Extract or generate request ID
     const requestId = this.extractRequestId(request, response);
 
+
+    console.log("EXCEPTION: ", exception)
     // Determine status and error response based on exception type
     const { status, errorResponse } = this.buildErrorResponse(exception, requestId);
 
