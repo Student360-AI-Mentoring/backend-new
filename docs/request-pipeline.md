@@ -15,6 +15,7 @@ Request → Middleware → CustomValidationPipe → Controller → Service → R
 ### 1. Middleware Layer
 
 **RequestIdMiddleware:**
+
 - Checks for or sets `X-Request-Id` header
 - Stores correlation ID on `req.requestId` for logging and response tracking
 - Ensures all logs and responses share the same correlation identifier
@@ -22,6 +23,7 @@ Request → Middleware → CustomValidationPipe → Controller → Service → R
 ### 2. Validation Layer
 
 **CustomValidationPipe (`src/common/pipes/validation.pipe.ts`):**
+
 - Validates incoming request DTOs using class-validator
 - Converts validation errors to snake_case field names
 - Whitelists DTO properties and transforms inputs
@@ -30,6 +32,7 @@ Request → Middleware → CustomValidationPipe → Controller → Service → R
 - Handles system constraints (whitelist validation) automatically
 
 **Key Features:**
+
 ```typescript
 // Preferred: Custom context for explicit error control
 @IsEmail({}, { context: ERRORS.EMAIL01 })
@@ -43,6 +46,7 @@ email: string;
 ### 3. Controller Layer
 
 Controllers focus purely on business logic and endpoint definitions:
+
 - Use predefined error constants for clean service calls
 - Utilize documentation decorators for consistent API docs
 - Simply return data objects (interceptors handle response wrapping)
@@ -50,10 +54,11 @@ Controllers focus purely on business logic and endpoint definitions:
 ### 4. Service Layer
 
 **Business Logic & Error Handling:**
+
 ```typescript
 // Predefined errors - simple and direct
 if (existingUser) {
-  throw AUTH_ERRORS.USER_ALREADY_EXISTS;  // Clean throwing
+  throw AUTH_ERRORS.USER_ALREADY_EXISTS; // Clean throwing
 }
 
 // Custom exceptions with proper status codes
@@ -62,7 +67,7 @@ export const AUTH_ERRORS = {
     'USER_ALREADY_EXISTS',
     'User with this email already exists',
     'An account with this email address is already registered in the system',
-    409
+    409,
   ),
 } as const;
 ```
@@ -70,15 +75,18 @@ export const AUTH_ERRORS = {
 ### 5. Interceptor Layer
 
 **LoggingInterceptor:**
+
 - Logs request method, URL, body and response status/duration
 - Uses structured logging with correlation IDs
 
 **TransformInterceptor:**
+
 - Converts response keys from camelCase to snake_case
 - Serializes `Date` values to ISO strings
 - Maintains data consistency across API responses
 
 **ResponseInterceptor (`src/common/interceptors/response.interceptor.ts`):**
+
 - Wraps handler output in standardized `ApiResponse` format
 - Adds `success`, `status`, `meta.timestamp`, `meta.request_id`
 - Preserves `pagination` blocks when present
@@ -88,22 +96,26 @@ export const AUTH_ERRORS = {
 
 **Custom Exception Classes (`src/common/exceptions/`):**
 
-**BaseCustomException:**
+**CustomException:**
+
 - Abstract base class for all custom exceptions
 - Provides consistent error response format
 - Maintains error code and user message structure
 
 **ValidationException:**
+
 - Handles validation errors with field-specific details
 - Returns structured validation error responses
 - Contains array of field validation details
 
 **BusinessException:**
+
 - Handles business logic errors
 - Customizable error codes and messages
 - Supports different HTTP status codes
 
 **InternalException:**
+
 - Handles unexpected server errors
 - Provides safe error messages for production
 - Logs detailed error information for debugging
@@ -113,11 +125,14 @@ export const AUTH_ERRORS = {
 **HttpExceptionFilter (`src/common/filters/http-exception.filter.ts`):**
 
 **Exception Handling Priority:**
+
 1. **Custom Exceptions** (ValidationException, BusinessException, etc.)
+
    - Uses custom error format and codes
    - Maintains developer-defined error messages
 
 2. **Standard HttpExceptions**
+
    - Converts to standard format
    - Uses HTTP status codes as error codes
 
@@ -127,12 +142,14 @@ export const AUTH_ERRORS = {
    - Logs full error details for debugging
 
 **Error Logging Strategy:**
+
 - **4xx (Client Errors):** Warning level
 - **5xx (Server Errors):** Error level with stack traces
 
 ## Response Formats
 
 ### Success Response
+
 ```json
 {
   "success": true,
@@ -157,6 +174,7 @@ export const AUTH_ERRORS = {
 ```
 
 ### Validation Error Response
+
 ```json
 {
   "success": false,
@@ -187,6 +205,7 @@ export const AUTH_ERRORS = {
 ```
 
 ### Business Logic Error Response
+
 ```json
 {
   "success": false,
@@ -204,6 +223,7 @@ export const AUTH_ERRORS = {
 ```
 
 ### Internal Server Error Response
+
 ```json
 {
   "success": false,
@@ -222,16 +242,13 @@ export const AUTH_ERRORS = {
 ## Configuration
 
 ### Main Application Setup
+
 ```typescript
 // main.ts
 app.use(requestIdMiddleware);
 app.useGlobalPipes(new CustomValidationPipe());
 app.useGlobalFilters(new HttpExceptionFilter());
-app.useGlobalInterceptors(
-  new LoggingInterceptor(),
-  new TransformInterceptor(),
-  new ResponseInterceptor()
-);
+app.useGlobalInterceptors(new LoggingInterceptor(), new TransformInterceptor(), new ResponseInterceptor());
 ```
 
 ## Development Guidelines
@@ -239,17 +256,20 @@ app.useGlobalInterceptors(
 ### Error Handling Best Practices
 
 **1. Validation Errors:**
+
 - Always provide custom contexts for validation decorators
 - Use appropriate error codes from `error_en.json`
 - Include helpful error messages for end users
 
 **2. Business Logic Errors:**
+
 - Use descriptive error codes (e.g., `USER_ALREADY_EXISTS`)
 - Provide clear, actionable error messages
 - Set appropriate HTTP status codes
 - Use predefined error constants for consistency
 
 **3. Error Codes:**
+
 - Keep error codes consistent and meaningful
 - Document all custom error codes
 - Use hierarchical naming (e.g., `USER_*`, `AUTH_*`)
@@ -304,11 +324,13 @@ export class CreateUserDto {
 ## Environment-Specific Behavior
 
 ### Development
+
 - Full error details and stack traces
 - Detailed console logging
 - Developer warnings for missing contexts
 
 ### Production
+
 - Safe error messages for external consumption
 - Structured logging without sensitive information
 - Internal error details logged server-side only
@@ -333,10 +355,13 @@ export class CreateUserDto {
 ### Common Issues
 
 **Missing Context Warning:**
+
 ```
 Missing context for constraint 'minLength' on field 'password'
 ```
+
 **Solution:** Add context to validation decorator:
+
 ```typescript
 @MinLength(8, { context: ERRORS.PASS02 })
 ```

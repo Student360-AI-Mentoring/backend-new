@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty, IsString, MinLength, IsOptional, IsInt } from 'class-validator';
 import { Expose } from 'class-transformer';
-import * as ERRORS from '../../../utils/constants/error_en.json';
+import { ERROR_EN } from '../../../utils/constants/error_en';
 
 export class AuthRegisterDto {
   @ApiProperty({
@@ -10,8 +10,8 @@ export class AuthRegisterDto {
     description: 'Email address of the user',
     required: true,
   })
-  @IsNotEmpty({ context: ERRORS.ALEM01 })
-  @IsEmail({}, { context: ERRORS.EMAIL01 })
+  @IsNotEmpty({ context: ERROR_EN.ALEM01 })
+  @IsEmail({}, { context: ERROR_EN.EMAIL01 })
   @Expose()
   email: string;
 
@@ -22,9 +22,9 @@ export class AuthRegisterDto {
     required: true,
     minLength: 8,
   })
-  @IsNotEmpty({ context: ERRORS.ALEM01 })
-  @IsString({ context: ERRORS.ALEM02 })
-  @MinLength(8, { context: ERRORS.PASS02 })
+  @IsNotEmpty({ context: ERROR_EN.ALEM01 })
+  @IsString({ context: ERROR_EN.ALEM02 })
+  @MinLength(8, { context: ERROR_EN.PASS02 })
   @Expose()
   password: string;
 
@@ -35,7 +35,7 @@ export class AuthRegisterDto {
     required: false,
   })
   @IsOptional()
-  @IsString({ context: ERRORS.STU01 })
+  @IsString({ context: ERROR_EN.STU01 })
   @Expose({ name: 'national_student_id' })
   nationalStudentId?: string;
 
@@ -46,7 +46,7 @@ export class AuthRegisterDto {
     required: false,
   })
   @IsOptional()
-  @IsString({ context: ERRORS.ALEM02 })
+  @IsString({ context: ERROR_EN.ALEM02 })
   @Expose({ name: 'external_id' })
   externalId?: string;
 
@@ -57,7 +57,7 @@ export class AuthRegisterDto {
     required: false,
   })
   @IsOptional()
-  @IsInt({ context: ERRORS.ACC01 })
+  @IsInt({ context: ERROR_EN.ACC01 })
   @Expose({ name: 'account_type_id' })
   accountTypeId?: number;
 }

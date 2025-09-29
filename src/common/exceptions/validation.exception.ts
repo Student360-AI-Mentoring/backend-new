@@ -1,5 +1,5 @@
 import { HttpStatus } from '@nestjs/common';
-import { BaseCustomException } from './base-custom.exception';
+import { CustomException } from './custom.exception';
 
 export interface ValidationDetail {
   field: string;
@@ -8,9 +8,9 @@ export interface ValidationDetail {
   details: string;
 }
 
-export class ValidationException extends BaseCustomException {
+export class ValidationException extends CustomException {
   readonly code = 'VALIDATION_ERROR';
-  readonly userMessage = 'Validation failed';
+  readonly message = 'Validation failed';
 
   constructor(public readonly details: ValidationDetail[]) {
     super('Validation failed', HttpStatus.BAD_REQUEST, details);

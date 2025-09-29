@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsOptional, IsInt, IsDateString, IsNotEmpty } from 'class-validator';
 import { Expose } from 'class-transformer';
-import * as ERRORS from '../../../utils/constants/error_en.json';
+import { ERROR_EN } from '../../../utils/constants/error_en';
 
 export class CreateStudentIdDto {
   @ApiProperty({
@@ -9,8 +9,8 @@ export class CreateStudentIdDto {
     description: 'National Student ID',
     example: 'NS011',
   })
-  @IsNotEmpty({ context: ERRORS.ALEM01 })
-  @IsString({ context: ERRORS.STU01 })
+  @IsNotEmpty({ context: ERROR_EN.ALEM01 })
+  @IsString({ context: ERROR_EN.STU01 })
   @Expose()
   id: string;
 
@@ -21,7 +21,7 @@ export class CreateStudentIdDto {
     required: false,
   })
   @IsOptional()
-  @IsString({ context: ERRORS.ALEM02 })
+  @IsString({ context: ERROR_EN.ALEM02 })
   @Expose({ name: 'full_name' })
   fullName?: string;
 
@@ -32,7 +32,7 @@ export class CreateStudentIdDto {
     required: false,
   })
   @IsOptional()
-  @IsDateString({}, { context: ERRORS.ALEM02 })
+  @IsDateString({}, { context: ERROR_EN.ALEM02 })
   @Expose({ name: 'date_of_birth' })
   dateOfBirth?: string;
 
@@ -43,7 +43,7 @@ export class CreateStudentIdDto {
     required: false,
   })
   @IsOptional()
-  @IsString({ context: ERRORS.ALEM02 })
+  @IsString({ context: ERROR_EN.ALEM02 })
   @Expose()
   university?: string;
 
@@ -54,7 +54,7 @@ export class CreateStudentIdDto {
     required: false,
   })
   @IsOptional()
-  @IsString({ context: ERRORS.ALEM02 })
+  @IsString({ context: ERROR_EN.ALEM02 })
   @Expose()
   major?: string;
 
@@ -65,7 +65,7 @@ export class CreateStudentIdDto {
     required: false,
   })
   @IsOptional()
-  @IsInt({ context: ERRORS.ALEM02 })
+  @IsInt({ context: ERROR_EN.ALEM02 })
   @Expose({ name: 'enrollment_year' })
   enrollmentYear?: number;
 
@@ -76,7 +76,7 @@ export class CreateStudentIdDto {
     required: false,
   })
   @IsOptional()
-  @IsInt({ context: ERRORS.ALEM02 })
+  @IsInt({ context: ERROR_EN.ALEM02 })
   @Expose({ name: 'graduation_year' })
   graduationYear?: number;
 }

@@ -1,8 +1,8 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 
-export abstract class BaseCustomException extends HttpException {
+export abstract class CustomException extends HttpException {
   abstract readonly code: string;
-  abstract readonly userMessage: string;
+  abstract readonly message: string;
 
   constructor(message: string, status: HttpStatus, public readonly details?: unknown) {
     super(message, status);
@@ -11,7 +11,7 @@ export abstract class BaseCustomException extends HttpException {
   getErrorResponse() {
     return {
       code: this.code,
-      message: this.userMessage,
+      message: this.message,
       details: this.details,
     };
   }

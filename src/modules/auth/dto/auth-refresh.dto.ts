@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString } from 'class-validator';
 import { Expose } from 'class-transformer';
-import * as ERRORS from '../../../utils/constants/error_en.json';
+import { ERROR_EN } from '../../../utils/constants/error_en';
 
 export class AuthRefreshDto {
   @ApiProperty({
@@ -10,8 +10,8 @@ export class AuthRefreshDto {
     description: 'JWT refresh token for getting new access tokens',
     required: true,
   })
-  @IsNotEmpty({ context: ERRORS.ALEM01 })
-  @IsString({ context: ERRORS.ALEM02 })
+  @IsNotEmpty({ context: ERROR_EN.ALEM01 })
+  @IsString({ context: ERROR_EN.ALEM02 })
   @Expose({ name: 'refresh_token' })
   refreshToken: string;
 }

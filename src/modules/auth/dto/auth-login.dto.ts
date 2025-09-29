@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
 import { Expose } from 'class-transformer';
-import * as ERRORS from '../../../utils/constants/error_en.json';
+import { ERROR_EN } from '../../../utils/constants/error_en';
 
 export class AuthLoginDto {
   @ApiProperty({
@@ -10,8 +10,8 @@ export class AuthLoginDto {
     description: 'Email address of the user',
     required: true,
   })
-  @IsNotEmpty({ context: ERRORS.ALEM01 })
-  @IsEmail({}, { context: ERRORS.EMAIL01 })
+  @IsNotEmpty({ context: ERROR_EN.ALEM01 })
+  @IsEmail({}, { context: ERROR_EN.EMAIL01 })
   @Expose()
   email: string;
 
@@ -22,9 +22,9 @@ export class AuthLoginDto {
     required: true,
     minLength: 8,
   })
-  @IsNotEmpty({ context: ERRORS.ALEM01 })
-  @IsString({ context: ERRORS.ALEM02 })
-  @MinLength(8, { context: ERRORS.PASS02 })
+  @IsNotEmpty({ context: ERROR_EN.ALEM01 })
+  @IsString({ context: ERROR_EN.ALEM02 })
+  @MinLength(8, { context: ERROR_EN.PASS02 })
   @Expose()
   password: string;
 }

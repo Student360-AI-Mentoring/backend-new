@@ -36,7 +36,7 @@ docker compose up --build
 ### Option 2: Hybrid Setup (Recommended for Development)
 **Use case**: Active development with faster iteration cycles while maintaining database consistency.
 ```bash
-docker compose up postgres-db && npm run start:dev
+docker compose up db && npm run start:dev
 ```
 - Database runs in Docker (consistent, isolated)
 - NestJS app runs locally with hot-reload

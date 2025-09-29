@@ -1,14 +1,14 @@
 import { HttpStatus } from '@nestjs/common';
-import { BaseCustomException } from './base-custom.exception';
+import { CustomException } from './custom.exception';
 
-export class BusinessException extends BaseCustomException {
+export class BusinessException extends CustomException {
   constructor(
     public readonly code: string,
-    public readonly userMessage: string,
+    public readonly message: string,
     details?: unknown,
     status: HttpStatus = HttpStatus.BAD_REQUEST,
   ) {
-    super(userMessage, status, details);
+    super(message, status, details);
   }
 }
 

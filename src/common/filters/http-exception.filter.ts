@@ -1,6 +1,6 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { BaseCustomException, InternalException } from '../exceptions';
+import { CustomException, InternalException } from '../exceptions';
 import { ErrorResponseService } from '../services/error-response.service';
 
 /**
@@ -26,8 +26,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
     // Extract or generate request ID
     const requestId = this.extractRequestId(request, response);
 
-
-    console.log("EXCEPTION: ", exception)
     // Determine status and error response based on exception type
     const { status, errorResponse } = this.buildErrorResponse(exception, requestId);
 
@@ -60,7 +58,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
   private buildErrorResponse(exception: unknown, requestId: string) {
     // Handle custom exceptions (ValidationException, BusinessException, etc.)
-    if (exception instanceof BaseCustomException) {
+    if (exception instanceof CustomException) {
       return {
         status: exception.getStatus(),
         errorResponse: this.errorResponseService.createErrorResponse(
