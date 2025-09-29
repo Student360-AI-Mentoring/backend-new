@@ -25,7 +25,7 @@ Explain what the project does and why it exists.
 There are three main approaches to run the application, each suited for different development scenarios:
 
 ### Option 1: Full Docker Setup
-**Use case**: Quick setup, production-like environment, or when you don't want to manage local dependencies.
+**Use case**: Quick setup, production-like environment, run migrations automatically. (and no seed data)
 ```bash
 docker compose up --build
 ```
@@ -36,22 +36,15 @@ docker compose up --build
 ### Option 2: Hybrid Setup (Recommended for Development)
 **Use case**: Active development with faster iteration cycles while maintaining database consistency.
 ```bash
-docker compose up db && npm run start:dev
+docker compose up -d db && npm run migration:run && npm run migration:seed && npm run start:dev
 ```
-- Database runs in Docker (consistent, isolated)
-- NestJS app runs locally with hot-reload
-- Best of both worlds: stable database + fast development cycles
-- Requires Docker, Node.js, and npm installed locally
 
 ### Option 3: Full Local Setup
 **Use case**: Complete control over all components, debugging database queries, or when Docker is not available.
 ```bash
-npm run start:dev
+npm run migration:run && npm run migration:seed && npm run start:dev
 ```
-- Both application and database run locally
 - **Assumes you have PostgreSQL running locally and configured**
-- Fastest startup time once environment is configured
-- Requires Node.js, npm, and local PostgreSQL installation
 
 ### Access Points
 | Resource | URL |

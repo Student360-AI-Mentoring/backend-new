@@ -1,154 +1,131 @@
-# Request Pipeline Documentation
+# Request Pipeline Guide
 
-## Overview
+## Key Points
 
-The application implements a comprehensive request pipeline that handles incoming requests from middleware through to response formatting, including robust error handling and consistent API response formats.
+- Every request receives a correlation id from `src/common/middlewares/request-id.middleware.ts` and the same id is echoed on logs and responses.
+- Input validation is centralized in `CustomValidationPipe`, which transforms DTOs, enforces whitelisting, and emits structured error details (with `ALEM*` fallbacks) when constraints are missing custom contexts.
+- Controllers and services return plain data or `{ data, pagination }` objects; global interceptors create the public response envelope and convert properties to `snake_case`.
+- `HttpExceptionFilter` normalizes every thrown error into the shared `ApiResponse` format and logs with severity based on the HTTP status code.
 
-## Complete Request Flow
+## End-to-End Flow
 
 ```
-Request → Middleware → CustomValidationPipe → Controller → Service → ResponseInterceptor → HttpExceptionFilter → Response
+Client → Express middleware (request id, helmet, compression) → Global pipes → Guards (per route) → Controller → Service
+       → ResponseInterceptor → TransformInterceptor → Express response
+       ↘ on error: HttpExceptionFilter → standardized error envelope
 ```
 
-## Pipeline Components
+`LoggingInterceptor` surrounds the full Nest execution so that both the inbound request and the final response (success or error) are registered with duration metrics.
 
-### 1. Middleware Layer
+## Component Roles
 
-**RequestIdMiddleware:**
+- **Middleware**: Express-level functions that run before Nest handles the request; ideal for cross-cutting concerns like correlation IDs, security headers, or compression.
+- **Pipes**: Classes implementing `PipeTransform` that can transform or validate incoming data before it hits controllers; perfect for DTO validation and normalization.
+- **Guards**: Authorization checkpoints that decide whether a request can proceed to route handlers, e.g., JWT authentication.
+- **Interceptors**: Wrappers around the controller/service execution that can transform outgoing data, augment metadata, or log performance.
+- **Exception Filters**: Catch-all components that map thrown errors into the standardized HTTP/JSON shape while handling logging duties.
 
-- Checks for or sets `X-Request-Id` header
-- Stores correlation ID on `req.requestId` for logging and response tracking
-- Ensures all logs and responses share the same correlation identifier
+## Bootstrap & Express Layer
 
-### 2. Validation Layer
+File: `src/main.ts`
 
-**CustomValidationPipe (`src/common/pipes/validation.pipe.ts`):**
+- Applies `requestIdMiddleware` before any Nest processing so the `X-Request-Id` header is always present.
+- Enables security middleware (`helmet`) and HTTP compression to match production behaviour locally.
+- Configures CORS from environment variables, defaulting to the configured frontend domain.
+- Sets a global API prefix (`appConfig.apiPrefix`) so every module automatically sits under the same namespace.
+- Registers the global validation pipe and exception filter (redundantly enforced through `AppModule` providers for unit-test scenarios).
+- Optionally exposes Swagger (disabled only when `SWAGGER_ENABLED=false` in production).
 
-- Validates incoming request DTOs using class-validator
-- Converts validation errors to snake_case field names
-- Whitelists DTO properties and transforms inputs
-- Throws `ValidationException` with structured error details
-- Prioritizes custom context over default mappings
-- Handles system constraints (whitelist validation) automatically
+## Request Correlation Middleware
 
-**Key Features:**
+File: `src/common/middlewares/request-id.middleware.ts`
+
+- Reuses an incoming `X-Request-Id` header when present; otherwise generates a UUID.
+- Stores the id on `req.requestId` so interceptors, guards, and services can reuse it without re-reading headers.
+- Ensures the same id is written back to the outgoing response headers.
+
+## Validation Stage
+
+File: `src/common/pipes/validation.pipe.ts`
+
+- Runs for DTO classes that carry class-validator metadata and skips primitive parameters.
+- Transforms plain payloads into their DTO class instances via `class-transformer`.
+- Enforces `whitelist` + `forbidNonWhitelisted`, immediately rejecting unknown properties with error code `ALEM05`.
+- Pulls custom constraint contexts (`{ context: { code, message, details } }`) into the response; falls back to `ALEM02` when no context is provided.
+- Converts property names to `snake_case` before returning validation details so they match the API contract.
+- Throws `CommonExceptions.ValidationException`, which the filter later turns into a `400` response with a `details` array (`ValidationDetail`).
+
+## Guards (Opt-in)
+
+File: `src/common/guards/auth.guard.ts`
+
+- `JwtAuthGuard` extracts the Bearer token, verifies it with `JwtService`, and assigns the decoded payload to `request.user`.
+- Throws `UnauthorizedException` on missing or invalid tokens; the global exception filter will map that to the standard error format.
+- Attach the guard with `@UseGuards(JwtAuthGuard)` on endpoints that require authentication.
+
+## Controller & Service Responsibilities
+
+- Controllers should accept validated DTOs and return domain DTOs or simple objects. They **must not** build response envelopes manually.
+- Services encapsulate business rules and throw `CustomException` instances (either directly from `CommonExceptions` or feature-specific factories such as `AuthExceptions` in `src/modules/auth/constants/auth.constants.ts`).
+- When pagination is needed, return `{ data, pagination }`. The response interceptor will preserve both sections.
 
 ```typescript
-// Preferred: Custom context for explicit error control
-@IsEmail({}, { context: ERRORS.EMAIL01 })
-email: string;
-
-// Fallback: System constraints handled automatically
-// whitelistValidation → ALEM05 (Unknown Field)
-// Other constraints → ALEM02 (Invalid Field) + developer warning
-```
-
-### 3. Controller Layer
-
-Controllers focus purely on business logic and endpoint definitions:
-
-- Use predefined error constants for clean service calls
-- Utilize documentation decorators for consistent API docs
-- Simply return data objects (interceptors handle response wrapping)
-
-### 4. Service Layer
-
-**Business Logic & Error Handling:**
-
-```typescript
-// Predefined errors - simple and direct
-if (existingUser) {
-  throw AUTH_ERRORS.USER_ALREADY_EXISTS; // Clean throwing
+// src/modules/auth/auth.service.ts
+if (existingAccount) {
+  throw AuthExceptions.UserAlreadyExistsException();
 }
-
-// Custom exceptions with proper status codes
-export const AUTH_ERRORS = {
-  USER_ALREADY_EXISTS: new BusinessException(
-    'USER_ALREADY_EXISTS',
-    'User with this email already exists',
-    'An account with this email address is already registered in the system',
-    409,
-  ),
-} as const;
+return { data: users, pagination };
 ```
 
-### 5. Interceptor Layer
+## Global Interceptors
 
-**LoggingInterceptor:**
+Declared in `src/app.module.ts` via `APP_INTERCEPTOR` so they apply to every HTTP route.
 
-- Logs request method, URL, body and response status/duration
-- Uses structured logging with correlation IDs
+- **LoggingInterceptor (`src/common/interceptors/logging.interceptor.ts`)**
 
-**TransformInterceptor:**
+  - Logs method, URL, and body when the request arrives.
+  - Logs status code and elapsed time once the downstream processing finishes.
+  - Gives full visibility for both successful and failed pipelines thanks to `tap()`.
 
-- Converts response keys from camelCase to snake_case
-- Serializes `Date` values to ISO strings
-- Maintains data consistency across API responses
+- **ResponseInterceptor (`src/common/interceptors/response.interceptor.ts`)**
 
-**ResponseInterceptor (`src/common/interceptors/response.interceptor.ts`):**
+  - Ensures the request id is set on both the request object and the outgoing headers.
+  - Wraps handler output into `{ success, status, data?, meta, pagination? }` without mutating the original HTTP status.
+  - Supports two return patterns: a raw value (becomes `data`) or an object that already contains `data` and optional `pagination`.
+  - Leaves room for interceptors or filters downstream by returning an RxJS stream.
 
-- Wraps handler output in standardized `ApiResponse` format
-- Adds `success`, `status`, `meta.timestamp`, `meta.request_id`
-- Preserves `pagination` blocks when present
-- Ensures consistent response structure
+- **TransformInterceptor (`src/common/interceptors/transform.interceptor.ts`)**
+  - Converts all object keys to `snake_case` (recursing arrays and nested objects).
+  - Serializes `Date` instances to ISO strings, including the meta timestamp produced by the response interceptor.
+  - Leaves scalar values untouched, so primitives (e.g., booleans) return as-is.
 
-### 6. Exception Handling Layer
+The practical order is: Logging (outermost) → Response → Transform. This makes sure the response wrapper is built before the payload is converted to `snake_case`, and the logger captures the final status code.
 
-**Custom Exception Classes (`src/common/exceptions/`):**
+## Exception Handling
 
-**CustomException:**
+### Custom Exceptions
 
-- Abstract base class for all custom exceptions
-- Provides consistent error response format
-- Maintains error code and user message structure
+File: `src/common/exceptions/custom.exception.ts`
 
-**ValidationException:**
+- Extends Nest's `HttpException` with an additional `code` and optional `details` payload.
+- Factory helpers include: `InternalException`, `ValidationException`, `UserAlreadyExistsException`, `UserNotFoundException`, and `InvalidCredentialsException`.
+- Feature modules (e.g., `AuthExceptions`) build on top of the same class to keep error semantics consistent across the codebase.
 
-- Handles validation errors with field-specific details
-- Returns structured validation error responses
-- Contains array of field validation details
+### Global Filter
 
-**BusinessException:**
+File: `src/common/filters/http-exception.filter.ts`
 
-- Handles business logic errors
-- Customizable error codes and messages
-- Supports different HTTP status codes
-
-**InternalException:**
-
-- Handles unexpected server errors
-- Provides safe error messages for production
-- Logs detailed error information for debugging
-
-### 7. Global Exception Filter
-
-**HttpExceptionFilter (`src/common/filters/http-exception.filter.ts`):**
-
-**Exception Handling Priority:**
-
-1. **Custom Exceptions** (ValidationException, BusinessException, etc.)
-
-   - Uses custom error format and codes
-   - Maintains developer-defined error messages
-
-2. **Standard HttpExceptions**
-
-   - Converts to standard format
-   - Uses HTTP status codes as error codes
-
-3. **Unexpected Errors**
-   - Wraps in InternalException
-   - Provides safe error messages
-   - Logs full error details for debugging
-
-**Error Logging Strategy:**
-
-- **4xx (Client Errors):** Warning level
-- **5xx (Server Errors):** Error level with stack traces
+- Captures everything thrown during request processing.
+- Resolution order:
+  1. `CustomException` → returns status from the instance and copies `{ code, message, details }` into the response body.
+  2. Any `HttpException` → maps to an error with `code = HttpStatus[status]` and `message = exception.message`.
+  3. Unknown errors → wrapped in `CommonExceptions.InternalException` with status 500.
+- Uses `ErrorResponseHelper` (`src/utils/helpers/error-response.helper.ts`) to build the final `ApiResponse`, including `meta.request_id` and ISO timestamps.
+- Logging policy: client errors (`4xx`) log as warnings; server errors (`5xx`) log as errors with stack traces when available.
 
 ## Response Formats
 
-### Success Response
+### Success
 
 ```json
 {
@@ -158,11 +135,11 @@ export const AUTH_ERRORS = {
     "user": {
       "id": "123e4567-e89b-12d3-a456-426614174000",
       "email": "user@example.com",
-      "created_at": "2025-01-01T00:00:00.000Z"
+      "created_at": "2024-01-01T00:00:00.000Z"
     }
   },
   "meta": {
-    "timestamp": "2025-01-01T00:00:00.000Z",
+    "timestamp": "2024-01-01T00:00:00.000Z",
     "request_id": "req-123456"
   },
   "pagination": {
@@ -173,7 +150,7 @@ export const AUTH_ERRORS = {
 }
 ```
 
-### Validation Error Response
+### Validation Error
 
 ```json
 {
@@ -186,25 +163,25 @@ export const AUTH_ERRORS = {
       {
         "field": "email",
         "code": "EMAIL01",
-        "message": "Invalid Email",
-        "details": "Please provide a valid email address."
+        "message": "Invalid email format",
+        "details": "Please provide a valid email address"
       },
       {
         "field": "password",
-        "code": "PASS02",
-        "message": "Password Too Short",
-        "details": "Password must be at least 8 characters long."
+        "code": "ALEM02",
+        "message": "This field format is invalid",
+        "details": "password must be longer than or equal to 8 characters"
       }
     ]
   },
   "meta": {
-    "timestamp": "2025-01-01T00:00:00.000Z",
+    "timestamp": "2024-01-01T00:00:00.000Z",
     "request_id": "req-123456"
   }
 }
 ```
 
-### Business Logic Error Response
+### Business Error
 
 ```json
 {
@@ -212,164 +189,36 @@ export const AUTH_ERRORS = {
   "status": 409,
   "error": {
     "code": "USER_ALREADY_EXISTS",
-    "message": "User already exists",
-    "details": "An account with this email address is already registered in the system"
+    "message": "User with this email already exists",
+    "details": null
   },
   "meta": {
-    "timestamp": "2025-01-01T00:00:00.000Z",
+    "timestamp": "2024-01-01T00:00:00.000Z",
     "request_id": "req-123456"
   }
 }
 ```
 
-### Internal Server Error Response
+## Extending the Pipeline
 
-```json
-{
-  "success": false,
-  "status": 500,
-  "error": {
-    "code": "INTERNAL_SERVER_ERROR",
-    "message": "An unexpected error occurred"
-  },
-  "meta": {
-    "timestamp": "2025-01-01T00:00:00.000Z",
-    "request_id": "req-123456"
-  }
+- Add new global behaviour as interceptors instead of duplicating logic in controllers. Register them with `APP_INTERCEPTOR` to preserve ordering.
+- When introducing new validation rules, always supply `{ context: { code, message, details } }` on the decorator so the API receives meaningful error codes.
+- Use `CustomException` factories for reusable domain errors; prefer to define them alongside feature modules (see `AuthExceptions`).
+- If a feature needs additional request metadata, attach it to the request object after the middleware stage so interceptors and filters can read it.
+
+## Reference Types
+
+File: `src/type.d.ts`
+
+```ts
+export interface ApiResponse<T = unknown> {
+  success: boolean;
+  status: number;
+  data?: T;
+  error?: IError;
+  meta: IMeta;
+  pagination?: IPagination;
 }
 ```
 
-## Configuration
-
-### Main Application Setup
-
-```typescript
-// main.ts
-app.use(requestIdMiddleware);
-app.useGlobalPipes(new CustomValidationPipe());
-app.useGlobalFilters(new HttpExceptionFilter());
-app.useGlobalInterceptors(new LoggingInterceptor(), new TransformInterceptor(), new ResponseInterceptor());
-```
-
-## Development Guidelines
-
-### Error Handling Best Practices
-
-**1. Validation Errors:**
-
-- Always provide custom contexts for validation decorators
-- Use appropriate error codes from `error_en.json`
-- Include helpful error messages for end users
-
-**2. Business Logic Errors:**
-
-- Use descriptive error codes (e.g., `USER_ALREADY_EXISTS`)
-- Provide clear, actionable error messages
-- Set appropriate HTTP status codes
-- Use predefined error constants for consistency
-
-**3. Error Codes:**
-
-- Keep error codes consistent and meaningful
-- Document all custom error codes
-- Use hierarchical naming (e.g., `USER_*`, `AUTH_*`)
-
-### Service Layer Guidelines
-
-```typescript
-// ✅ Good: Use predefined errors
-if (existingUser) {
-  throw AUTH_ERRORS.USER_ALREADY_EXISTS;
-}
-
-// ❌ Bad: Manual exception creation
-throw new ConflictException('User already exists');
-```
-
-### Controller Layer Guidelines
-
-```typescript
-// ✅ Good: Use documentation decorators
-@Post('register')
-@AuthDoc.RegisterSummary()
-@AuthDoc.RegisterSuccess()
-@AuthDoc.RegisterConflict()
-async register(@Body() dto: RegisterDto) {
-  return await this.authService.register(dto);
-}
-
-// ❌ Bad: Verbose inline decorators
-@Post('register')
-@ApiOperation({ summary: 'Register user' })
-@ApiResponse({ status: 201, description: 'User created', ... })
-@ApiResponse({ status: 409, description: 'User exists', ... })
-```
-
-### DTO Guidelines
-
-```typescript
-// ✅ Good: Custom context for validation
-export class CreateUserDto {
-  @IsNotEmpty({ context: ERRORS.ALEM01 })
-  @IsEmail({}, { context: ERRORS.EMAIL01 })
-  email: string;
-
-  @IsNotEmpty({ context: ERRORS.ALEM01 })
-  @MinLength(8, { context: ERRORS.PASS02 })
-  @Matches(/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/, { context: ERRORS.PASS01 })
-  password: string;
-}
-```
-
-## Environment-Specific Behavior
-
-### Development
-
-- Full error details and stack traces
-- Detailed console logging
-- Developer warnings for missing contexts
-
-### Production
-
-- Safe error messages for external consumption
-- Structured logging without sensitive information
-- Internal error details logged server-side only
-
-## Security Considerations
-
-- Never expose sensitive information in error messages
-- Log detailed errors server-side for debugging
-- Use generic messages for authentication failures
-- Sanitize all user input through validation pipeline
-- Rate limiting and request correlation for monitoring
-
-## Performance Considerations
-
-- Predefined errors are instantiated once at module load
-- Efficient error throwing without object creation overhead
-- Structured logging with correlation IDs for debugging
-- Response transformation happens once at interceptor level
-
-## Troubleshooting
-
-### Common Issues
-
-**Missing Context Warning:**
-
-```
-Missing context for constraint 'minLength' on field 'password'
-```
-
-**Solution:** Add context to validation decorator:
-
-```typescript
-@MinLength(8, { context: ERRORS.PASS02 })
-```
-
-**Uncaught Exceptions:**
-All uncaught exceptions are automatically wrapped in `InternalException` and logged with full stack traces.
-
-**Invalid Field Errors:**
-Fields not defined in DTO are automatically rejected with `ALEM05` (Unknown Field) error.
-
-This pipeline ensures consistent, secure, and maintainable request handling across the entire application while providing excellent developer experience and end-user feedback.
+Keep this file in sync whenever the response contract evolves.

@@ -71,41 +71,36 @@ src/modules/your-module/
 **Create `constants/your-module.constants.ts`:**
 
 ```typescript
-import { BusinessException } from '@/common/exceptions';
+// src/modules/auth/constants/auth.constants.ts
+export const AuthExceptions = {
+  UserAlreadyExistsException: (message?: string, details?: unknown) =>
+    new CustomException(
+      'USER_ALREADY_EXISTS',
+      message || 'User with this email already exists',
+      HttpStatus.CONFLICT,
+      details,
+    ),
 
-// Predefined errors - instantiated once at module load
-export const YOUR_MODULE_ERRORS = {
-  ENTITY_NOT_FOUND: new BusinessException(
-    'ENTITY_NOT_FOUND',
-    'Entity not found',
-    'No entity found with the provided identifier',
-    404
-  ),
-  ENTITY_ALREADY_EXISTS: new BusinessException(
-    'ENTITY_ALREADY_EXISTS',
-    'Entity already exists',
-    'An entity with this identifier already exists',
-    409
-  ),
-  INVALID_OPERATION: new BusinessException(
-    'INVALID_OPERATION',
-    'Invalid operation',
-    'This operation is not allowed in the current state',
-    400
-  ),
-} as const;
+  InvalidCredentialsException: (message?: string, details?: unknown) =>
+    new CustomException('INVALID_CREDENTIALS', message || 'Invalid credentials', HttpStatus.UNAUTHORIZED, details),
 
-export const YOUR_MODULE_SUCCESS = {
-  ENTITY_CREATED_SUCCESSFULLY: {
-    message: 'Entity created successfully'
-  },
-  ENTITY_UPDATED_SUCCESSFULLY: {
-    message: 'Entity updated successfully'
-  },
-  ENTITY_DELETED_SUCCESSFULLY: {
-    message: 'Entity deleted successfully'
-  },
-} as const;
+  AccountInactiveException: (message?: string, details?: unknown) =>
+    new CustomException('ACCOUNT_INACTIVE', message || 'Account is inactive', HttpStatus.UNAUTHORIZED, details),
+
+  AccountNotFoundException: (message?: string, details?: unknown) =>
+    new CustomException('ACCOUNT_NOT_FOUND', message || 'Account not found', HttpStatus.NOT_FOUND, details),
+
+  InvalidRefreshTokenException: (message?: string, details?: unknown) =>
+    new CustomException('INVALID_REFRESH_TOKEN', message || 'Invalid refresh token', HttpStatus.UNAUTHORIZED, details),
+
+  NationalStudentIdNotFoundException: (message?: string, details?: unknown) =>
+    new CustomException(
+      'NATIONAL_STUDENT_ID_NOT_FOUND',
+      message || 'National Student ID not found',
+      HttpStatus.NOT_FOUND,
+      details,
+    ),
+};
 ```
 
 ### 2. Use in Services
@@ -118,23 +113,8 @@ throw new ConflictException('Entity already exists');
 
 **✅ Do this:**
 ```typescript
-import { YOUR_MODULE_ERRORS } from './constants/your-module.constants';
-
-if (!entity) {
-  throw YOUR_MODULE_ERRORS.ENTITY_NOT_FOUND;
-}
-
-if (existingEntity) {
-  throw YOUR_MODULE_ERRORS.ENTITY_ALREADY_EXISTS;
-}
+throw AuthExceptions.UserAlreadyExistsException();
 ```
-
-### 3. Error Code Naming Convention
-
-- Use **SCREAMING_SNAKE_CASE** for error codes
-- Start with module prefix: `USER_*`, `AUTH_*`, `PRODUCT_*`
-- Be descriptive: `USER_ALREADY_EXISTS`, `INVALID_CREDENTIALS`
-- Use appropriate HTTP status codes (400, 401, 403, 404, 409, 500)
 
 ---
 
@@ -166,7 +146,7 @@ async create(@Body() dto: CreateEntityDto) {
 @EntityDoc.CreateBadRequest()
 @EntityDoc.CreateConflict()
 async create(@Body() dto: CreateEntityDto): Promise<EntityResponseDto> {
-  return this.service.create(dto);
+  return this.service.create(dto); // return only needed data
 }
 ```
 
@@ -178,9 +158,6 @@ Controllers should return **plain data objects**. The `ResponseInterceptor` will
 ```typescript
 // Single entity
 return entityResponseDto;
-
-// Array of entities
-return entityResponseDtos;
 
 // Simple message
 return { message: SUCCESS_MESSAGES.ENTITY_CREATED };
@@ -344,11 +321,6 @@ async findById(id: string): Promise<EntityResponseDto> {
 **`dto/create-your-entity.dto.ts`:**
 
 ```typescript
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsOptional, IsInt, Min, Max } from 'class-validator';
-import { Expose } from 'class-transformer';
-import * as ERRORS from '@/utils/constants/error_en.json';
-
 export class CreateYourEntityDto {
   @ApiProperty({
     name: 'name',
@@ -467,80 +439,6 @@ export class YourEntityResponseDto {
 - `@Min()`, `@Max()` - Number range
 - `@Matches()` - Regex patterns
 - `@Transform()` - Data transformation
-
----
-
-## Documentation Patterns
-
-### 1. Swagger Documentation Structure
-
-Each module should have comprehensive API documentation:
-
-```typescript
-export const YourModuleDoc = {
-  // Create Operations
-  CreateSummary: () => applyDecorators(/* ... */),
-  CreateSuccess: () => applyDecorators(/* ... */),
-  CreateBadRequest: () => applyDecorators(/* ... */),
-  CreateConflict: () => applyDecorators(/* ... */),
-
-  // Read Operations
-  GetAllSummary: () => applyDecorators(/* ... */),
-  GetAllSuccess: () => applyDecorators(/* ... */),
-
-  GetOneSummary: () => applyDecorators(/* ... */),
-  GetOneSuccess: () => applyDecorators(/* ... */),
-  GetOneNotFound: () => applyDecorators(/* ... */),
-
-  // Update Operations
-  UpdateSummary: () => applyDecorators(/* ... */),
-  UpdateSuccess: () => applyDecorators(/* ... */),
-
-  // Delete Operations
-  DeleteSummary: () => applyDecorators(/* ... */),
-  DeleteSuccess: () => applyDecorators(/* ... */),
-
-  // Search Operations (if applicable)
-  SearchSummary: () => applyDecorators(/* ... */),
-  SearchSuccess: () => applyDecorators(/* ... */),
-};
-```
-
-### 2. Response Schema Examples
-
-Include realistic examples in your API responses:
-
-```typescript
-CreateSuccess: () =>
-  applyDecorators(
-    ApiResponse({
-      status: HttpStatus.CREATED,
-      description: 'Entity created successfully',
-      schema: {
-        type: 'object',
-        properties: {
-          success: { type: 'boolean', example: true },
-          status: { type: 'number', example: 201 },
-          data: {
-            type: 'object',
-            properties: {
-              id: { type: 'string', example: 'entity-123' },
-              name: { type: 'string', example: 'Sample Entity' },
-              createdAt: { type: 'string', format: 'date-time', example: '2025-01-01T00:00:00.000Z' }
-            }
-          },
-          meta: {
-            type: 'object',
-            properties: {
-              timestamp: { type: 'string', format: 'date-time', example: '2025-01-01T00:00:00.000Z' },
-              request_id: { type: 'string', example: 'req-123456' }
-            }
-          }
-        }
-      }
-    }),
-  ),
-```
 
 ---
 

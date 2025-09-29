@@ -1,7 +1,7 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { CustomException, InternalException } from '../exceptions';
-import { ErrorResponseService } from '../services/error-response.service';
+import { CustomException, CommonExceptions } from '../exceptions/custom.exception';
+import { ErrorResponseHelper } from '@/utils/helpers/error-response.helper';
 
 /**
  * Global exception filter that catches all exceptions and formats them
@@ -16,7 +16,6 @@ import { ErrorResponseService } from '../services/error-response.service';
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name);
-  private readonly errorResponseService = new ErrorResponseService();
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
@@ -61,7 +60,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     if (exception instanceof CustomException) {
       return {
         status: exception.getStatus(),
-        errorResponse: this.errorResponseService.createErrorResponse(
+        errorResponse: ErrorResponseHelper.createErrorResponse(
           exception.getStatus(),
           exception.getErrorResponse(),
           requestId,
@@ -74,7 +73,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       const status = exception.getStatus();
       return {
         status,
-        errorResponse: this.errorResponseService.createErrorResponse(
+        errorResponse: ErrorResponseHelper.createErrorResponse(
           status,
           {
             code: HttpStatus[status] || 'HTTP_ERROR',
@@ -87,11 +86,14 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     // Handle unexpected errors
     const status = HttpStatus.INTERNAL_SERVER_ERROR;
-    const internalError = new InternalException(exception instanceof Error ? exception.message : 'Unexpected error');
+    const internalError = CommonExceptions.InternalException(
+      'Internal server error',
+      exception instanceof Error ? exception.message : 'Unexpected error',
+    );
 
     return {
       status,
-      errorResponse: this.errorResponseService.createErrorResponse(status, internalError.getErrorResponse(), requestId),
+      errorResponse: ErrorResponseHelper.createErrorResponse(status, internalError.getErrorResponse(), requestId),
     };
   }
 

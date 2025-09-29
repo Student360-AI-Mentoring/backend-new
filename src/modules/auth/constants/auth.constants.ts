@@ -1,60 +1,51 @@
-import { BusinessException } from '@/common/exceptions';
+import { CustomException } from '@/common/exceptions/custom.exception';
+import { HttpStatus } from '@nestjs/common';
 
-interface AuthSuccess {
+export const AuthExceptions = {
+  UserAlreadyExistsException: (message?: string, details?: unknown) =>
+    new CustomException(
+      'USER_ALREADY_EXISTS',
+      message || 'User with this email already exists',
+      HttpStatus.CONFLICT,
+      details,
+    ),
+
+  InvalidCredentialsException: (message?: string, details?: unknown) =>
+    new CustomException('INVALID_CREDENTIALS', message || 'Invalid credentials', HttpStatus.UNAUTHORIZED, details),
+
+  AccountInactiveException: (message?: string, details?: unknown) =>
+    new CustomException('ACCOUNT_INACTIVE', message || 'Account is inactive', HttpStatus.UNAUTHORIZED, details),
+
+  AccountNotFoundException: (message?: string, details?: unknown) =>
+    new CustomException('ACCOUNT_NOT_FOUND', message || 'Account not found', HttpStatus.NOT_FOUND, details),
+
+  InvalidRefreshTokenException: (message?: string, details?: unknown) =>
+    new CustomException('INVALID_REFRESH_TOKEN', message || 'Invalid refresh token', HttpStatus.UNAUTHORIZED, details),
+
+  NationalStudentIdNotFoundException: (message?: string, details?: unknown) =>
+    new CustomException(
+      'NATIONAL_STUDENT_ID_NOT_FOUND',
+      message || 'National Student ID not found',
+      HttpStatus.NOT_FOUND,
+      details,
+    ),
+};
+
+export interface AuthSuccess {
   message: string;
 }
 
-// Predefined Auth Errors - Simple and Direct
-export const AUTH_ERRORS = {
-  USER_ALREADY_EXISTS: new BusinessException(
-    'USER_ALREADY_EXISTS',
-    'User with this email already exists',
-    'An account with this email address is already registered in the system',
-    409,
-  ),
-  INVALID_CREDENTIALS: new BusinessException(
-    'INVALID_CREDENTIALS',
-    'Invalid credentials',
-    'The provided email or password is incorrect',
-    401,
-  ),
-  ACCOUNT_INACTIVE: new BusinessException(
-    'ACCOUNT_INACTIVE',
-    'Account is inactive',
-    'Your account has been deactivated. Please contact support',
-    401,
-  ),
-  ACCOUNT_NOT_FOUND: new BusinessException(
-    'ACCOUNT_NOT_FOUND',
-    'Account not found',
-    'No account found with the provided information',
-    404,
-  ),
-  INVALID_REFRESH_TOKEN: new BusinessException(
-    'INVALID_REFRESH_TOKEN',
-    'Invalid refresh token',
-    'The refresh token is expired or invalid. Please login again',
-    401,
-  ),
-  NATIONAL_STUDENT_ID_NOT_FOUND: new BusinessException(
-    'NATIONAL_STUDENT_ID_NOT_FOUND',
-    'National Student ID not found',
-    'The provided National Student ID does not exist in the system',
-    404,
-  ),
-} as const;
-
-export const AUTH_SUCCESS = {
-  USER_REGISTERED_SUCCESSFULLY: {
+export const AuthSuccessMessages = {
+  UserRegisteredSuccessfully: {
     message: 'User registered successfully',
   },
-  LOGIN_SUCCESS: {
+  LoginSuccess: {
     message: 'Login successful',
   },
-  LOGOUT_SUCCESS: {
+  LogoutSuccess: {
     message: 'Successfully logged out',
   },
-  TOKENS_REFRESHED_SUCCESSFULLY: {
+  TokensRefreshedSuccessfully: {
     message: 'Tokens refreshed successfully',
   },
 } as const satisfies Record<string, AuthSuccess>;

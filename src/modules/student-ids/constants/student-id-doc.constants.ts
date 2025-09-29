@@ -1,14 +1,100 @@
 import { applyDecorators, HttpStatus } from '@nestjs/common';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, getSchemaPath } from '@nestjs/swagger';
+import { StudentIdResponseDto } from '../dto/student-id-response.dto';
 
-// Student ID Module Documentation Decorators
+const ISO_DATE_EXAMPLE = '2025-01-01T00:00:00.000Z';
+const REQUEST_ID_EXAMPLE = 'req-1234567890';
+
+type Schema = Record<string, unknown>;
+
+const META_SCHEMA: Schema = {
+  type: 'object',
+  properties: {
+    timestamp: {
+      type: 'string',
+      format: 'date-time',
+      example: ISO_DATE_EXAMPLE,
+    },
+    request_id: {
+      type: 'string',
+      example: REQUEST_ID_EXAMPLE,
+    },
+  },
+};
+
+const PAGINATION_SCHEMA: Schema = {
+  type: 'object',
+  properties: {
+    page: { type: 'number', example: 1 },
+    limit: { type: 'number', example: 10 },
+    total: { type: 'number', example: 100 },
+  },
+};
+
+const VALIDATION_DETAIL_SCHEMA: Schema = {
+  type: 'object',
+  properties: {
+    field: { type: 'string', example: 'full_name' },
+    code: { type: 'string', example: 'ALEM01' },
+    message: { type: 'string', example: 'full_name is required' },
+    details: { type: 'string', example: 'Please provide full_name' },
+  },
+};
+
+const VALIDATION_DETAILS_ARRAY_SCHEMA: Schema = {
+  type: 'array',
+  items: VALIDATION_DETAIL_SCHEMA,
+};
+
+const buildSuccessResponseSchema = (status: number, dataSchema?: Schema, extras?: Record<string, Schema>): Schema => {
+  const schema: Schema = {
+    type: 'object',
+    properties: {
+      success: { type: 'boolean', example: true },
+      status: { type: 'number', example: status },
+      meta: META_SCHEMA,
+    },
+  };
+
+  if (dataSchema) {
+    (schema.properties as Record<string, Schema>).data = dataSchema;
+  }
+
+  if (extras) {
+    for (const [key, value] of Object.entries(extras)) {
+      (schema.properties as Record<string, Schema>)[key] = value;
+    }
+  }
+
+  return schema;
+};
+
+const buildErrorResponseSchema = (status: number, errorProperties: Schema): Schema => ({
+  type: 'object',
+  properties: {
+    success: { type: 'boolean', example: false },
+    status: { type: 'number', example: status },
+    error: {
+      type: 'object',
+      properties: errorProperties,
+    },
+    meta: META_SCHEMA,
+  },
+});
+
+const buildValidationErrorSchema = (status: number, detailsSchema: Schema = VALIDATION_DETAILS_ARRAY_SCHEMA): Schema =>
+  buildErrorResponseSchema(status, {
+    code: { type: 'string', example: 'VALIDATION_ERROR' },
+    message: { type: 'string', example: 'Validation failed' },
+    details: detailsSchema,
+  });
+
 export const StudentIdDoc = {
-  // Create Student ID Endpoint
   CreateSummary: () =>
     applyDecorators(
       ApiOperation({
-        summary: 'Create Student ID',
-        description: 'Create a new student ID record with personal and academic information',
+        summary: 'Create student ID',
+        description: 'Persist a new student ID record with personal and academic information.',
       }),
     ),
 
@@ -16,54 +102,10 @@ export const StudentIdDoc = {
     applyDecorators(
       ApiResponse({
         status: HttpStatus.CREATED,
-        description: 'Student ID created successfully',
-        schema: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean', example: true },
-            status: { type: 'number', example: HttpStatus.CREATED },
-            data: {
-              type: 'object',
-              properties: {
-                id: { type: 'string', example: 'SV2024001' },
-                fullName: { type: 'string', example: 'Nguyen Van A' },
-                dateOfBirth: {
-                  type: 'string',
-                  format: 'date',
-                  example: '2000-01-15',
-                },
-                university: {
-                  type: 'string',
-                  example: 'Dai hoc Bach Khoa Ha Noi',
-                },
-                major: { type: 'string', example: 'Computer Science' },
-                enrollmentYear: { type: 'number', example: 2020 },
-                graduationYear: { type: 'number', example: 2024 },
-                createdAt: {
-                  type: 'string',
-                  format: 'date-time',
-                  example: '2025-01-01T00:00:00.000Z',
-                },
-                updatedAt: {
-                  type: 'string',
-                  format: 'date-time',
-                  example: '2025-01-01T00:00:00.000Z',
-                },
-              },
-            },
-            meta: {
-              type: 'object',
-              properties: {
-                timestamp: {
-                  type: 'string',
-                  format: 'date-time',
-                  example: '2025-01-01T00:00:00.000Z',
-                },
-                request_id: { type: 'string', example: 'req-123456' },
-              },
-            },
-          },
-        },
+        description: 'Student ID created successfully.',
+        schema: buildSuccessResponseSchema(HttpStatus.CREATED, {
+          $ref: getSchemaPath(StudentIdResponseDto),
+        }),
       }),
     ),
 
@@ -71,50 +113,8 @@ export const StudentIdDoc = {
     applyDecorators(
       ApiResponse({
         status: HttpStatus.BAD_REQUEST,
-        description: 'Validation failed',
-        schema: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean', example: false },
-            status: { type: 'number', example: HttpStatus.BAD_REQUEST },
-            error: {
-              type: 'object',
-              properties: {
-                code: { type: 'string', example: 'VALIDATION_ERROR' },
-                message: { type: 'string', example: 'Validation failed' },
-                details: {
-                  type: 'array',
-                  items: {
-                    type: 'object',
-                    properties: {
-                      field: { type: 'string', example: 'id' },
-                      code: { type: 'string', example: 'STU01' },
-                      message: {
-                        type: 'string',
-                        example: 'Invalid Student ID',
-                      },
-                      details: {
-                        type: 'string',
-                        example: 'Student ID must be a valid format',
-                      },
-                    },
-                  },
-                },
-              },
-            },
-            meta: {
-              type: 'object',
-              properties: {
-                timestamp: {
-                  type: 'string',
-                  format: 'date-time',
-                  example: '2025-01-01T00:00:00.000Z',
-                },
-                request_id: { type: 'string', example: 'req-123456' },
-              },
-            },
-          },
-        },
+        description: 'Input payload failed validation.',
+        schema: buildValidationErrorSchema(HttpStatus.BAD_REQUEST),
       }),
     ),
 
@@ -122,48 +122,23 @@ export const StudentIdDoc = {
     applyDecorators(
       ApiResponse({
         status: HttpStatus.CONFLICT,
-        description: 'Student ID already exists',
-        schema: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean', example: false },
-            status: { type: 'number', example: HttpStatus.CONFLICT },
-            error: {
-              type: 'object',
-              properties: {
-                code: { type: 'string', example: 'STUDENT_ID_ALREADY_EXISTS' },
-                message: {
-                  type: 'string',
-                  example: 'Student ID already exists',
-                },
-                details: {
-                  type: 'string',
-                  example: 'A student with this ID is already registered in the system',
-                },
-              },
-            },
-            meta: {
-              type: 'object',
-              properties: {
-                timestamp: {
-                  type: 'string',
-                  format: 'date-time',
-                  example: '2025-01-01T00:00:00.000Z',
-                },
-                request_id: { type: 'string', example: 'req-123456' },
-              },
-            },
+        description: 'Student ID already exists.',
+        schema: buildErrorResponseSchema(HttpStatus.CONFLICT, {
+          code: { type: 'string', example: 'STUDENT_ID_ALREADY_EXISTS' },
+          message: { type: 'string', example: 'Student ID already exists' },
+          details: {
+            type: 'string',
+            example: 'A student with this ID is already registered in the system',
           },
-        },
+        }),
       }),
     ),
 
-  // Get All Student IDs Endpoint
   GetAllSummary: () =>
     applyDecorators(
       ApiOperation({
-        summary: 'Get All Student IDs',
-        description: 'Retrieve all student ID records from the system',
+        summary: 'List student IDs',
+        description: 'Fetch a paginated list of student ID records.',
       }),
     ),
 
@@ -171,64 +146,23 @@ export const StudentIdDoc = {
     applyDecorators(
       ApiResponse({
         status: HttpStatus.OK,
-        description: 'Student IDs retrieved successfully',
-        schema: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean', example: true },
-            status: { type: 'number', example: HttpStatus.OK },
-            data: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  id: { type: 'string', example: 'SV2024001' },
-                  fullName: { type: 'string', example: 'Nguyen Van A' },
-                  dateOfBirth: {
-                    type: 'string',
-                    format: 'date',
-                    example: '2000-01-15',
-                  },
-                  university: {
-                    type: 'string',
-                    example: 'Dai hoc Bach Khoa Ha Noi',
-                  },
-                  major: { type: 'string', example: 'Computer Science' },
-                  enrollmentYear: { type: 'number', example: 2020 },
-                  graduationYear: { type: 'number', example: 2024 },
-                },
-              },
-            },
-            pagination: {
-              type: 'object',
-              properties: {
-                page: { type: 'number', example: 1 },
-                limit: { type: 'number', example: 10 },
-                total: { type: 'number', example: 125 },
-              },
-            },
-            meta: {
-              type: 'object',
-              properties: {
-                timestamp: {
-                  type: 'string',
-                  format: 'date-time',
-                  example: '2025-01-01T00:00:00.000Z',
-                },
-                request_id: { type: 'string', example: 'req-123456' },
-              },
-            },
+        description: 'Student IDs retrieved successfully.',
+        schema: buildSuccessResponseSchema(
+          HttpStatus.OK,
+          {
+            type: 'array',
+            items: { $ref: getSchemaPath(StudentIdResponseDto) },
           },
-        },
+          { pagination: PAGINATION_SCHEMA },
+        ),
       }),
     ),
 
-  // Get Single Student ID Endpoint
   GetOneSummary: () =>
     applyDecorators(
       ApiOperation({
-        summary: 'Get Student ID by ID',
-        description: 'Retrieve a specific student ID record by its ID',
+        summary: 'Get student ID',
+        description: 'Retrieve a single student ID by its identifier.',
       }),
     ),
 
@@ -236,44 +170,10 @@ export const StudentIdDoc = {
     applyDecorators(
       ApiResponse({
         status: HttpStatus.OK,
-        description: 'Student ID retrieved successfully',
-        schema: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean', example: true },
-            status: { type: 'number', example: HttpStatus.OK },
-            data: {
-              type: 'object',
-              properties: {
-                id: { type: 'string', example: 'SV2024001' },
-                fullName: { type: 'string', example: 'Nguyen Van A' },
-                dateOfBirth: {
-                  type: 'string',
-                  format: 'date',
-                  example: '2000-01-15',
-                },
-                university: {
-                  type: 'string',
-                  example: 'Dai hoc Bach Khoa Ha Noi',
-                },
-                major: { type: 'string', example: 'Computer Science' },
-                enrollmentYear: { type: 'number', example: 2020 },
-                graduationYear: { type: 'number', example: 2024 },
-              },
-            },
-            meta: {
-              type: 'object',
-              properties: {
-                timestamp: {
-                  type: 'string',
-                  format: 'date-time',
-                  example: '2025-01-01T00:00:00.000Z',
-                },
-                request_id: { type: 'string', example: 'req-123456' },
-              },
-            },
-          },
-        },
+        description: 'Student ID retrieved successfully.',
+        schema: buildSuccessResponseSchema(HttpStatus.OK, {
+          $ref: getSchemaPath(StudentIdResponseDto),
+        }),
       }),
     ),
 
@@ -281,45 +181,23 @@ export const StudentIdDoc = {
     applyDecorators(
       ApiResponse({
         status: HttpStatus.NOT_FOUND,
-        description: 'Student ID not found',
-        schema: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean', example: false },
-            status: { type: 'number', example: HttpStatus.NOT_FOUND },
-            error: {
-              type: 'object',
-              properties: {
-                code: { type: 'string', example: 'STUDENT_ID_NOT_FOUND' },
-                message: { type: 'string', example: 'Student ID not found' },
-                details: {
-                  type: 'string',
-                  example: 'No student found with the provided ID',
-                },
-              },
-            },
-            meta: {
-              type: 'object',
-              properties: {
-                timestamp: {
-                  type: 'string',
-                  format: 'date-time',
-                  example: '2025-01-01T00:00:00.000Z',
-                },
-                request_id: { type: 'string', example: 'req-123456' },
-              },
-            },
+        description: 'Student ID not found.',
+        schema: buildErrorResponseSchema(HttpStatus.NOT_FOUND, {
+          code: { type: 'string', example: 'STUDENT_ID_NOT_FOUND' },
+          message: { type: 'string', example: 'Student ID not found' },
+          details: {
+            type: 'string',
+            example: 'No student found with the provided ID',
           },
-        },
+        }),
       }),
     ),
 
-  // Update Student ID Endpoint
   UpdateSummary: () =>
     applyDecorators(
       ApiOperation({
-        summary: 'Update Student ID',
-        description: 'Update an existing student ID record with new information',
+        summary: 'Update student ID',
+        description: 'Modify an existing student ID record.',
       }),
     ),
 
@@ -327,53 +205,18 @@ export const StudentIdDoc = {
     applyDecorators(
       ApiResponse({
         status: HttpStatus.OK,
-        description: 'Student ID updated successfully',
-        schema: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean', example: true },
-            status: { type: 'number', example: HttpStatus.OK },
-            data: {
-              type: 'object',
-              properties: {
-                id: { type: 'string', example: 'SV2024001' },
-                fullName: { type: 'string', example: 'Nguyen Van A Updated' },
-                dateOfBirth: {
-                  type: 'string',
-                  format: 'date',
-                  example: '2000-01-15',
-                },
-                university: {
-                  type: 'string',
-                  example: 'Dai hoc Bach Khoa Ha Noi',
-                },
-                major: { type: 'string', example: 'Computer Science' },
-                enrollmentYear: { type: 'number', example: 2020 },
-                graduationYear: { type: 'number', example: 2024 },
-              },
-            },
-            meta: {
-              type: 'object',
-              properties: {
-                timestamp: {
-                  type: 'string',
-                  format: 'date-time',
-                  example: '2025-01-01T00:00:00.000Z',
-                },
-                request_id: { type: 'string', example: 'req-123456' },
-              },
-            },
-          },
-        },
+        description: 'Student ID updated successfully.',
+        schema: buildSuccessResponseSchema(HttpStatus.OK, {
+          $ref: getSchemaPath(StudentIdResponseDto),
+        }),
       }),
     ),
 
-  // Delete Student ID Endpoint
   DeleteSummary: () =>
     applyDecorators(
       ApiOperation({
-        summary: 'Delete Student ID',
-        description: 'Delete a student ID record from the system',
+        summary: 'Delete student ID',
+        description: 'Remove a student ID record from the system.',
       }),
     ),
 
@@ -381,16 +224,16 @@ export const StudentIdDoc = {
     applyDecorators(
       ApiResponse({
         status: HttpStatus.NO_CONTENT,
-        description: 'Student ID deleted successfully',
+        description: 'Student ID deleted successfully.',
+        schema: buildSuccessResponseSchema(HttpStatus.NO_CONTENT),
       }),
     ),
 
-  // Search Student IDs Endpoint
   SearchSummary: () =>
     applyDecorators(
       ApiOperation({
-        summary: 'Search Student IDs',
-        description: 'Search for student IDs using a query string',
+        summary: 'Search student IDs',
+        description: 'Search student IDs using a free-text query.',
       }),
     ),
 
@@ -398,47 +241,11 @@ export const StudentIdDoc = {
     applyDecorators(
       ApiResponse({
         status: HttpStatus.OK,
-        description: 'Search completed successfully',
-        schema: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean', example: true },
-            status: { type: 'number', example: HttpStatus.OK },
-            data: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  id: { type: 'string', example: 'SV2024001' },
-                  fullName: { type: 'string', example: 'Nguyen Van A' },
-                  dateOfBirth: {
-                    type: 'string',
-                    format: 'date',
-                    example: '2000-01-15',
-                  },
-                  university: {
-                    type: 'string',
-                    example: 'Dai hoc Bach Khoa Ha Noi',
-                  },
-                  major: { type: 'string', example: 'Computer Science' },
-                  enrollmentYear: { type: 'number', example: 2020 },
-                  graduationYear: { type: 'number', example: 2024 },
-                },
-              },
-            },
-            meta: {
-              type: 'object',
-              properties: {
-                timestamp: {
-                  type: 'string',
-                  format: 'date-time',
-                  example: '2025-01-01T00:00:00.000Z',
-                },
-                request_id: { type: 'string', example: 'req-123456' },
-              },
-            },
-          },
-        },
+        description: 'Student IDs matching the query.',
+        schema: buildSuccessResponseSchema(HttpStatus.OK, {
+          type: 'array',
+          items: { $ref: getSchemaPath(StudentIdResponseDto) },
+        }),
       }),
     ),
 };

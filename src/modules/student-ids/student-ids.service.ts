@@ -4,9 +4,9 @@ import { CreateStudentIdDto } from './dto/create-student-id.dto';
 import { UpdateStudentIdDto } from './dto/update-student-id.dto';
 import { StudentIdResponseDto } from './dto/student-id-response.dto';
 import { StudentId } from './domain/student-id';
-import { STUDENT_ID_ERRORS } from './constants/student-id.constants';
 import { GetStudentIdsQueryDto } from './dto/get-student-ids-query.dto';
 import { IPagination } from '@/type';
+import { StudentIdExceptions } from './constants/student-id.constants';
 
 @Injectable()
 export class StudentIdsService {
@@ -17,7 +17,7 @@ export class StudentIdsService {
     const existingStudentId = await this.studentIdRepository.findById(createStudentIdDto.id);
 
     if (existingStudentId) {
-      throw STUDENT_ID_ERRORS.STUDENT_ID_ALREADY_EXISTS;
+      throw StudentIdExceptions.StudentIdAlreadyExistsException();
     }
 
     await this.studentIdRepository.create({
@@ -52,7 +52,7 @@ export class StudentIdsService {
     const studentId = await this.studentIdRepository.findById(id);
 
     if (!studentId) {
-      throw STUDENT_ID_ERRORS.STUDENT_ID_NOT_FOUND;
+      throw StudentIdExceptions.StudentIdNotFoundException();
     }
 
     return this.toResponseDto(studentId);
@@ -65,7 +65,7 @@ export class StudentIdsService {
     });
 
     if (!updatedStudentId) {
-      throw STUDENT_ID_ERRORS.STUDENT_ID_NOT_FOUND;
+      throw StudentIdExceptions.StudentIdNotFoundException();
     }
 
     return this.toResponseDto(updatedStudentId);

@@ -1,14 +1,98 @@
 import { applyDecorators, HttpStatus } from '@nestjs/common';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, getSchemaPath } from '@nestjs/swagger';
+import { LoginResponseDto } from '../dto/login-response.dto';
+import { UserResponseDto } from '../dto/user-response.dto';
 
-// Auth Module Documentation Decorators
+const ISO_DATE_EXAMPLE = '2025-01-01T00:00:00.000Z';
+const REQUEST_ID_EXAMPLE = 'req-1234567890';
+
+type Schema = Record<string, unknown>;
+
+const META_SCHEMA: Schema = {
+  type: 'object',
+  properties: {
+    timestamp: {
+      type: 'string',
+      format: 'date-time',
+      example: ISO_DATE_EXAMPLE,
+    },
+    request_id: {
+      type: 'string',
+      example: REQUEST_ID_EXAMPLE,
+    },
+  },
+};
+
+const VALIDATION_DETAIL_SCHEMA: Schema = {
+  type: 'object',
+  properties: {
+    field: { type: 'string', example: 'email' },
+    code: { type: 'string', example: 'EMAIL01' },
+    message: {
+      type: 'string',
+      example: 'Email must be a valid email address',
+    },
+    details: {
+      type: 'string',
+      example: 'Please provide a valid email address',
+    },
+  },
+};
+
+const VALIDATION_DETAILS_ARRAY_SCHEMA: Schema = {
+  type: 'array',
+  items: VALIDATION_DETAIL_SCHEMA,
+};
+
+const buildSuccessResponseSchema = (status: number, dataSchema?: Schema, extras?: Record<string, Schema>): Schema => {
+  const schema: Schema = {
+    type: 'object',
+    properties: {
+      success: { type: 'boolean', example: true },
+      status: { type: 'number', example: status },
+      meta: META_SCHEMA,
+    },
+  };
+
+  if (dataSchema) {
+    (schema.properties as Record<string, Schema>).data = dataSchema;
+  }
+
+  if (extras) {
+    for (const [key, value] of Object.entries(extras)) {
+      (schema.properties as Record<string, Schema>)[key] = value;
+    }
+  }
+
+  return schema;
+};
+
+const buildErrorResponseSchema = (status: number, errorProperties: Schema): Schema => ({
+  type: 'object',
+  properties: {
+    success: { type: 'boolean', example: false },
+    status: { type: 'number', example: status },
+    error: {
+      type: 'object',
+      properties: errorProperties,
+    },
+    meta: META_SCHEMA,
+  },
+});
+
+const buildValidationErrorSchema = (status: number, detailsSchema: Schema = VALIDATION_DETAILS_ARRAY_SCHEMA): Schema =>
+  buildErrorResponseSchema(status, {
+    code: { type: 'string', example: 'VALIDATION_ERROR' },
+    message: { type: 'string', example: 'Validation failed' },
+    details: detailsSchema,
+  });
+
 export const AuthDoc = {
-  // Registration Endpoint
   RegisterSummary: () =>
     applyDecorators(
       ApiOperation({
-        summary: 'User Registration',
-        description: 'Create a new user account with email, password, and personal information',
+        summary: 'Register user',
+        description: 'Create a new user account using email, password, and optional student metadata.',
       }),
     ),
 
@@ -16,49 +100,10 @@ export const AuthDoc = {
     applyDecorators(
       ApiResponse({
         status: HttpStatus.CREATED,
-        description: 'User registered successfully',
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example: 'User registered successfully',
-            },
-            code: { type: 'number', example: HttpStatus.CREATED },
-            data: {
-              type: 'object',
-              properties: {
-                user: {
-                  type: 'object',
-                  properties: {
-                    id: {
-                      type: 'string',
-                      format: 'uuid',
-                      example: '123e4567-e89b-12d3-a456-426614174000',
-                    },
-                    email: {
-                      type: 'string',
-                      format: 'email',
-                      example: 'user@example.com',
-                    },
-                    first_name: { type: 'string', example: 'John' },
-                    last_name: { type: 'string', example: 'Doe' },
-                    created_at: {
-                      type: 'string',
-                      format: 'date-time',
-                      example: '2025-01-01T00:00:00.000Z',
-                    },
-                    updated_at: {
-                      type: 'string',
-                      format: 'date-time',
-                      example: '2025-01-01T00:00:00.000Z',
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
+        description: 'Account created successfully.',
+        schema: buildSuccessResponseSchema(HttpStatus.CREATED, {
+          $ref: getSchemaPath(UserResponseDto),
+        }),
       }),
     ),
 
@@ -66,64 +111,8 @@ export const AuthDoc = {
     applyDecorators(
       ApiResponse({
         status: HttpStatus.BAD_REQUEST,
-        description: 'Validation failed',
-        schema: {
-          type: 'object',
-          properties: {
-            message: { type: 'string', example: 'Validation failed' },
-            code: { type: 'number', example: HttpStatus.BAD_REQUEST },
-            errors: {
-              type: 'array',
-              items: {
-                type: 'object',
-                oneOf: [
-                  {
-                    properties: {
-                      field: { type: 'string', example: 'email' },
-                      code: { type: 'string', example: 'VAL001' },
-                      message: {
-                        type: 'string',
-                        example: 'Email must be a valid email address',
-                      },
-                      details: {
-                        type: 'string',
-                        example: 'Please provide a valid email address format',
-                      },
-                    },
-                  },
-                  {
-                    properties: {
-                      field: { type: 'string', example: 'password' },
-                      code: { type: 'string', example: 'VAL002' },
-                      message: {
-                        type: 'string',
-                        example: 'Password must be at least 8 characters long',
-                      },
-                      details: {
-                        type: 'string',
-                        example: 'Password should contain at least 8 characters',
-                      },
-                    },
-                  },
-                  {
-                    properties: {
-                      field: { type: 'string', example: 'firstName' },
-                      code: { type: 'string', example: 'VAL003' },
-                      message: {
-                        type: 'string',
-                        example: 'First name is required',
-                      },
-                      details: {
-                        type: 'string',
-                        example: 'Please provide your first name',
-                      },
-                    },
-                  },
-                ],
-              },
-            },
-          },
-        },
+        description: 'Input payload failed validation.',
+        schema: buildValidationErrorSchema(HttpStatus.BAD_REQUEST),
       }),
     ),
 
@@ -131,27 +120,26 @@ export const AuthDoc = {
     applyDecorators(
       ApiResponse({
         status: HttpStatus.CONFLICT,
-        description: 'User with this email already exists',
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example: 'User with this email already exists',
-            },
-            code: { type: 'number', example: HttpStatus.CONFLICT },
-            error: { type: 'string', example: 'Conflict' },
+        description: 'Email already registered.',
+        schema: buildErrorResponseSchema(HttpStatus.CONFLICT, {
+          code: { type: 'string', example: 'USER_ALREADY_EXISTS' },
+          message: {
+            type: 'string',
+            example: 'User with this email already exists',
           },
-        },
+          details: {
+            type: 'string',
+            example: 'An account with this email address already exists.',
+          },
+        }),
       }),
     ),
 
-  // Sign In Endpoint
   SignInSummary: () =>
     applyDecorators(
       ApiOperation({
-        summary: 'User Sign In',
-        description: 'Authenticate user with email and password to get access and refresh tokens',
+        summary: 'Authenticate user',
+        description: 'Verify credentials and issue access and refresh tokens.',
       }),
     ),
 
@@ -159,27 +147,10 @@ export const AuthDoc = {
     applyDecorators(
       ApiResponse({
         status: HttpStatus.OK,
-        description: 'Login successful',
-        schema: {
-          type: 'object',
-          properties: {
-            message: { type: 'string', example: 'Login successful' },
-            code: { type: 'number', example: HttpStatus.OK },
-            data: {
-              type: 'object',
-              properties: {
-                access_token: {
-                  type: 'string',
-                  example: 'eyJhbGciOiJIUzI1NiIs...',
-                },
-                refresh_token: {
-                  type: 'string',
-                  example: 'eyJhbGciOiJIUzI1NiIs...',
-                },
-              },
-            },
-          },
-        },
+        description: 'Credentials accepted, tokens issued.',
+        schema: buildSuccessResponseSchema(HttpStatus.OK, {
+          $ref: getSchemaPath(LoginResponseDto),
+        }),
       }),
     ),
 
@@ -187,50 +158,8 @@ export const AuthDoc = {
     applyDecorators(
       ApiResponse({
         status: HttpStatus.BAD_REQUEST,
-        description: 'Validation failed',
-        schema: {
-          type: 'object',
-          properties: {
-            message: { type: 'string', example: 'Validation failed' },
-            code: { type: 'number', example: HttpStatus.BAD_REQUEST },
-            errors: {
-              type: 'array',
-              items: {
-                type: 'object',
-                oneOf: [
-                  {
-                    properties: {
-                      field: { type: 'string', example: 'email' },
-                      code: { type: 'string', example: 'VAL001' },
-                      message: {
-                        type: 'string',
-                        example: 'Email must be a valid email address',
-                      },
-                      details: {
-                        type: 'string',
-                        example: 'Please provide a valid email address format',
-                      },
-                    },
-                  },
-                  {
-                    properties: {
-                      field: { type: 'string', example: 'password' },
-                      code: { type: 'string', example: 'VAL002' },
-                      message: {
-                        type: 'string',
-                        example: 'Password is required',
-                      },
-                      details: {
-                        type: 'string',
-                        example: 'Please provide your password',
-                      },
-                    },
-                  },
-                ],
-              },
-            },
-          },
-        },
+        description: 'Login payload failed validation.',
+        schema: buildValidationErrorSchema(HttpStatus.BAD_REQUEST),
       }),
     ),
 
@@ -238,15 +167,133 @@ export const AuthDoc = {
     applyDecorators(
       ApiResponse({
         status: HttpStatus.UNAUTHORIZED,
-        description: 'Invalid credentials or account deactivated',
-        schema: {
+        description: 'Invalid credentials or inactive account.',
+        schema: buildErrorResponseSchema(HttpStatus.UNAUTHORIZED, {
+          code: { type: 'string', example: 'INVALID_CREDENTIALS' },
+          message: { type: 'string', example: 'Invalid credentials' },
+        }),
+      }),
+    ),
+
+  RefreshSummary: () =>
+    applyDecorators(
+      ApiOperation({
+        summary: 'Refresh access token',
+        description: 'Exchange a refresh token for a new access token pair.',
+      }),
+    ),
+
+  RefreshSuccess: () =>
+    applyDecorators(
+      ApiResponse({
+        status: HttpStatus.OK,
+        description: 'Tokens refreshed successfully.',
+        schema: buildSuccessResponseSchema(HttpStatus.OK, {
+          $ref: getSchemaPath(LoginResponseDto),
+        }),
+      }),
+    ),
+
+  RefreshBadRequest: () =>
+    applyDecorators(
+      ApiResponse({
+        status: HttpStatus.BAD_REQUEST,
+        description: 'Refresh token payload failed validation.',
+        schema: buildValidationErrorSchema(HttpStatus.BAD_REQUEST, {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              field: { type: 'string', example: 'refresh_token' },
+              code: { type: 'string', example: 'ALEM01' },
+              message: { type: 'string', example: 'Refresh token is required' },
+              details: {
+                type: 'string',
+                example: 'refresh_token must be a non-empty string',
+              },
+            },
+          },
+        }),
+      }),
+    ),
+
+  RefreshUnauthorized: () =>
+    applyDecorators(
+      ApiResponse({
+        status: HttpStatus.UNAUTHORIZED,
+        description: 'Refresh token is invalid or expired.',
+        schema: buildErrorResponseSchema(HttpStatus.UNAUTHORIZED, {
+          code: { type: 'string', example: 'INVALID_REFRESH_TOKEN' },
+          message: { type: 'string', example: 'Invalid refresh token' },
+        }),
+      }),
+    ),
+
+  LogoutSummary: () =>
+    applyDecorators(
+      ApiOperation({
+        summary: 'Logout current user',
+        description: 'Invalidate all refresh tokens belonging to the authenticated account.',
+      }),
+    ),
+
+  LogoutSuccess: () =>
+    applyDecorators(
+      ApiResponse({
+        status: HttpStatus.OK,
+        description: 'Refresh tokens revoked successfully.',
+        schema: buildSuccessResponseSchema(HttpStatus.OK, {
           type: 'object',
           properties: {
-            message: { type: 'string', example: 'Invalid credentials' },
-            code: { type: 'number', example: HttpStatus.UNAUTHORIZED },
-            error: { type: 'string', example: 'Unauthorized' },
+            message: {
+              type: 'string',
+              example: 'Successfully logged out',
+            },
           },
-        },
+        }),
+      }),
+    ),
+
+  LogoutUnauthorized: () =>
+    applyDecorators(
+      ApiResponse({
+        status: HttpStatus.UNAUTHORIZED,
+        description: 'Missing or invalid bearer token.',
+        schema: buildErrorResponseSchema(HttpStatus.UNAUTHORIZED, {
+          code: { type: 'string', example: 'UNAUTHORIZED' },
+          message: { type: 'string', example: 'Unauthorized' },
+        }),
+      }),
+    ),
+
+  ProfileSummary: () =>
+    applyDecorators(
+      ApiOperation({
+        summary: 'Get current user profile',
+        description: 'Return the authenticated user profile derived from the access token.',
+      }),
+    ),
+
+  ProfileSuccess: () =>
+    applyDecorators(
+      ApiResponse({
+        status: HttpStatus.OK,
+        description: 'Authenticated user profile.',
+        schema: buildSuccessResponseSchema(HttpStatus.OK, {
+          $ref: getSchemaPath(UserResponseDto),
+        }),
+      }),
+    ),
+
+  ProfileUnauthorized: () =>
+    applyDecorators(
+      ApiResponse({
+        status: HttpStatus.UNAUTHORIZED,
+        description: 'Missing or invalid bearer token.',
+        schema: buildErrorResponseSchema(HttpStatus.UNAUTHORIZED, {
+          code: { type: 'string', example: 'UNAUTHORIZED' },
+          message: { type: 'string', example: 'Unauthorized' },
+        }),
       }),
     ),
 };

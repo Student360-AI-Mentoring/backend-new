@@ -1,14 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query } from '@nestjs/common';
+import { ApiExtraModels, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { IPagination } from '@/type';
-import { StudentIdsService } from './student-ids.service';
-import { CreateStudentIdDto } from './dto/create-student-id.dto';
-import { UpdateStudentIdDto } from './dto/update-student-id.dto';
-import { StudentIdResponseDto } from './dto/student-id-response.dto';
-import { GetStudentIdsQueryDto } from './dto/get-student-ids-query.dto';
 import { StudentIdDoc } from './constants/student-id-doc.constants';
+import { CreateStudentIdDto } from './dto/create-student-id.dto';
+import { GetStudentIdsQueryDto } from './dto/get-student-ids-query.dto';
+import { StudentIdResponseDto } from './dto/student-id-response.dto';
+import { UpdateStudentIdDto } from './dto/update-student-id.dto';
+import { StudentIdsService } from './student-ids.service';
 
 @ApiTags('Student IDs')
+@ApiExtraModels(StudentIdResponseDto)
 @Controller('student-ids')
 export class StudentIdsController {
   constructor(private readonly studentIdsService: StudentIdsService) {}
@@ -34,35 +35,35 @@ export class StudentIdsController {
 
   @Get('search')
   @StudentIdDoc.SearchSummary()
-  @ApiQuery({ name: 'q', description: 'Search query' })
   @StudentIdDoc.SearchSuccess()
+  @ApiQuery({ name: 'q', description: 'Search query text', example: 'computer' })
   search(@Query('q') query: string): Promise<StudentIdResponseDto[]> {
     return this.studentIdsService.search(query);
   }
 
   @Get(':id')
   @StudentIdDoc.GetOneSummary()
-  @ApiParam({ name: 'id', description: 'Student ID' })
   @StudentIdDoc.GetOneSuccess()
   @StudentIdDoc.GetOneNotFound()
+  @ApiParam({ name: 'id', description: 'Student ID identifier', example: 'SV2024001' })
   findOne(@Param('id') id: string): Promise<StudentIdResponseDto> {
     return this.studentIdsService.findOne(id);
   }
 
   @Patch(':id')
   @StudentIdDoc.UpdateSummary()
-  @ApiParam({ name: 'id', description: 'Student ID' })
   @StudentIdDoc.UpdateSuccess()
   @StudentIdDoc.GetOneNotFound()
+  @ApiParam({ name: 'id', description: 'Student ID identifier', example: 'SV2024001' })
   update(@Param('id') id: string, @Body() updateStudentIdDto: UpdateStudentIdDto): Promise<StudentIdResponseDto> {
     return this.studentIdsService.update(id, updateStudentIdDto);
   }
 
   @Delete(':id')
   @StudentIdDoc.DeleteSummary()
-  @ApiParam({ name: 'id', description: 'Student ID' })
   @StudentIdDoc.DeleteSuccess()
   @StudentIdDoc.GetOneNotFound()
+  @ApiParam({ name: 'id', description: 'Student ID identifier', example: 'SV2024001' })
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('id') id: string): Promise<void> {
     return this.studentIdsService.remove(id);

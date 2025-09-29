@@ -1,4 +1,4 @@
-import { ApiResponse, IMeta, IPagination } from '@/type';
+import { ApiResponse, IPagination } from '@/type';
 import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -24,49 +24,8 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, ApiResponse<T>
       response.setHeader('X-Request-Id', requestId);
     }
 
-    const isApiResponse = (value: unknown): value is ApiResponse<T> => {
-      if (!value || typeof value !== 'object') {
-        return false;
-      }
-
-      const v = value as Record<string, unknown>;
-      return 'success' in v && 'status' in v && 'meta' in v;
-    };
-
     return next.handle().pipe(
       map((data: unknown) => {
-        if (isApiResponse(data)) {
-          const original = data;
-          const metaSrc = original.meta ?? {};
-          const metaRecord = metaSrc as Record<string, unknown>;
-
-          const metaRequestId =
-            (typeof metaRecord.request_id === 'string' ? metaRecord.request_id : undefined) ??
-            (typeof metaRecord.requestId === 'string' ? metaRecord.requestId : undefined) ??
-            (typeof requestId === 'string' ? requestId : null);
-
-          // remove camelCase requestId if present
-          if ('requestId' in metaRecord) {
-            delete metaRecord.requestId;
-          }
-
-          const timestamp =
-            metaRecord.timestamp instanceof Date
-              ? metaRecord.timestamp
-              : metaRecord.timestamp
-              ? new Date(String(metaRecord.timestamp))
-              : new Date();
-
-          return {
-            ...original,
-            meta: {
-              ...(metaRecord as unknown as IMeta),
-              request_id: metaRequestId,
-              timestamp,
-            },
-          };
-        }
-
         const payload: ApiResponse<T> = {
           success: true,
           status: response.statusCode,

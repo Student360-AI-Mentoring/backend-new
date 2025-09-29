@@ -3,7 +3,6 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
-import { AUTH_ERRORS } from './constants/auth.constants';
 import { AccountRepository } from './infrastructure/repositories/account.repository';
 import { UserTokenRepository } from './infrastructure/repositories/user-token.repository';
 import { AuthLoginDto } from './dto/auth-login.dto';
@@ -13,6 +12,7 @@ import { UserResponseDto } from './dto/user-response.dto';
 import { Account } from './domain/account';
 import { JwtRefreshPayload } from './strategies/types/jwt-refresh-payload.type';
 import { JwtPayload } from './strategies/types/jwt-payload.type';
+import { AuthExceptions } from './constants/auth.constants';
 
 @Injectable()
 export class AuthService {
@@ -27,7 +27,7 @@ export class AuthService {
     // Check if email already exists
     const existingAccount = await this.accountRepository.findByEmail(registerDto.email);
     if (existingAccount) {
-      throw AUTH_ERRORS.USER_ALREADY_EXISTS;
+      throw AuthExceptions.UserAlreadyExistsException();
     }
 
     // Hash password
@@ -55,18 +55,18 @@ export class AuthService {
     // Find account by email
     const account = await this.accountRepository.findByEmail(loginDto.email);
     if (!account) {
-      throw AUTH_ERRORS.INVALID_CREDENTIALS;
+      throw AuthExceptions.InvalidCredentialsException();
     }
 
     // Check if account is active
     if (!account.isActive) {
-      throw AUTH_ERRORS.ACCOUNT_INACTIVE;
+      throw AuthExceptions.AccountInactiveException();
     }
 
     // Verify password
     const isPasswordValid = await bcrypt.compare(loginDto.password, account.passwordHash);
     if (!isPasswordValid) {
-      throw AUTH_ERRORS.INVALID_CREDENTIALS;
+      throw AuthExceptions.InvalidCredentialsException();
     }
 
     // Generate tokens
@@ -86,7 +86,7 @@ export class AuthService {
         !('sub' in (verified as Record<string, unknown>)) ||
         !('tokenId' in (verified as Record<string, unknown>))
       ) {
-        throw AUTH_ERRORS.INVALID_REFRESH_TOKEN;
+        throw AuthExceptions.InvalidRefreshTokenException();
       }
 
       const payload = verified as JwtRefreshPayload;
@@ -94,19 +94,19 @@ export class AuthService {
       // Find account
       const account = await this.accountRepository.findById(payload.sub);
       if (!account || !account.isActive) {
-        throw AUTH_ERRORS.INVALID_REFRESH_TOKEN;
+        throw AuthExceptions.InvalidRefreshTokenException();
       }
 
       // Validate refresh token in database
       const isValidToken = await this.validateRefreshToken(payload.tokenId, payload.sub);
       if (!isValidToken) {
-        throw AUTH_ERRORS.INVALID_REFRESH_TOKEN;
+        throw AuthExceptions.InvalidRefreshTokenException();
       }
 
       // Generate new tokens
       return await this.generateTokens(account);
     } catch (error) {
-      throw AUTH_ERRORS.INVALID_REFRESH_TOKEN;
+      throw AuthExceptions.InvalidRefreshTokenException();
     }
   }
 

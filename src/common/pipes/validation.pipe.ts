@@ -1,8 +1,9 @@
 import { Injectable, PipeTransform, ArgumentMetadata } from '@nestjs/common';
-import { validate, ValidationError } from 'class-validator';
+import { validate, ValidationError, getMetadataStorage } from 'class-validator';
 import { plainToClass, ClassConstructor } from 'class-transformer';
-import { ValidationException, ValidationDetail } from '../exceptions/validation.exception';
 import { camelToSnakeCase } from '@/utils/helpers/string.helper';
+import { CommonExceptions } from '../exceptions/custom.exception';
+import { ValidationDetail } from '../exceptions/types/validation.type';
 
 @Injectable()
 export class CustomValidationPipe implements PipeTransform<unknown> {
@@ -12,6 +13,10 @@ export class CustomValidationPipe implements PipeTransform<unknown> {
     }
 
     const MetatypeCtor = metatype as ClassConstructor<unknown>;
+    if (!this.hasValidationMetadata(MetatypeCtor)) {
+      return value;
+    }
+
     const object: unknown = plainToClass(MetatypeCtor, value as object);
     const errors = await validate(object as object, {
       whitelist: true,
@@ -20,7 +25,7 @@ export class CustomValidationPipe implements PipeTransform<unknown> {
 
     if (errors.length > 0) {
       const validationDetails = this.buildValidationDetails(errors);
-      throw new ValidationException(validationDetails);
+      throw CommonExceptions.ValidationException('validation failed', validationDetails);
     }
 
     return object;
@@ -29,6 +34,16 @@ export class CustomValidationPipe implements PipeTransform<unknown> {
   private toValidate(metatype: unknown): boolean {
     const types: Array<unknown> = [String, Boolean, Number, Array, Object];
     return !types.includes(metatype);
+  }
+
+  private hasValidationMetadata(target: ClassConstructor<unknown>): boolean {
+    try {
+      const metadataStorage = getMetadataStorage();
+      const metadatas = metadataStorage.getTargetValidationMetadatas(target, '', false, false);
+      return metadatas.length > 0;
+    } catch (error) {
+      return false;
+    }
   }
 
   private buildValidationDetails(errors: ValidationError[]): ValidationDetail[] {
