@@ -54,9 +54,9 @@ export class AddForeignKeys1758740485734 implements MigrationInterface {
     `);
 
     await queryRunner.query(`
-      ALTER TABLE "job_categories" 
-      ADD CONSTRAINT "FK_job_categories_parent_id" 
-      FOREIGN KEY ("parent_id") REFERENCES "job_categories" ("id")
+      ALTER TABLE "industries" 
+      ADD CONSTRAINT "FK_industries_parent_id" 
+      FOREIGN KEY ("parent_id") REFERENCES "industries" ("id")
     `);
 
     await queryRunner.query(`
@@ -67,8 +67,8 @@ export class AddForeignKeys1758740485734 implements MigrationInterface {
 
     await queryRunner.query(`
       ALTER TABLE "jobs" 
-      ADD CONSTRAINT "FK_jobs_category_id" 
-      FOREIGN KEY ("category_id") REFERENCES "job_categories" ("id")
+      ADD CONSTRAINT "FK_jobs_industry_id" 
+      FOREIGN KEY ("industry_id") REFERENCES "industries" ("id")
     `);
 
     await queryRunner.query(`
@@ -229,9 +229,9 @@ export class AddForeignKeys1758740485734 implements MigrationInterface {
     await queryRunner.query(`ALTER TABLE "jobs" DROP CONSTRAINT IF EXISTS "FK_jobs_created_by"`);
     await queryRunner.query(`ALTER TABLE "jobs" DROP CONSTRAINT IF EXISTS "FK_jobs_salary_currency"`);
     await queryRunner.query(`ALTER TABLE "jobs" DROP CONSTRAINT IF EXISTS "FK_jobs_location_id"`);
-    await queryRunner.query(`ALTER TABLE "jobs" DROP CONSTRAINT IF EXISTS "FK_jobs_category_id"`);
+    await queryRunner.query(`ALTER TABLE "jobs" DROP CONSTRAINT IF EXISTS "FK_industry_id"`);
     await queryRunner.query(`ALTER TABLE "jobs" DROP CONSTRAINT IF EXISTS "FK_jobs_company_id"`);
-    await queryRunner.query(`ALTER TABLE "job_categories" DROP CONSTRAINT IF EXISTS "FK_job_categories_parent_id"`);
+    await queryRunner.query(`ALTER TABLE "industries" DROP CONSTRAINT IF EXISTS "FK_industries_parent_id"`);
     await queryRunner.query(`ALTER TABLE "companies" DROP CONSTRAINT IF EXISTS "FK_companies_industry_id"`);
     await queryRunner.query(`ALTER TABLE "skills" DROP CONSTRAINT IF EXISTS "FK_skills_updated_by"`);
     await queryRunner.query(`ALTER TABLE "skills" DROP CONSTRAINT IF EXISTS "FK_skills_created_by"`);

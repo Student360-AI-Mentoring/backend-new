@@ -96,15 +96,6 @@ export class InitialSchema1758740418414 implements MigrationInterface {
       )
     `);
 
-    // Industries table
-    await queryRunner.query(`
-      CREATE TABLE "industries" (
-        "id" SERIAL PRIMARY KEY,
-        "name" varchar(100) UNIQUE,
-        "description" text
-      )
-    `);
-
     // Companies table
     await queryRunner.query(`
       CREATE TABLE "companies" (
@@ -128,9 +119,9 @@ export class InitialSchema1758740418414 implements MigrationInterface {
       )
     `);
 
-    // Job Categories table
+    // Job industry table
     await queryRunner.query(`
-      CREATE TABLE "job_categories" (
+      CREATE TABLE "industries" (
         "id" SERIAL PRIMARY KEY,
         "parent_id" int,
         "name" varchar(100) UNIQUE,
@@ -152,7 +143,7 @@ export class InitialSchema1758740418414 implements MigrationInterface {
       CREATE TABLE "jobs" (
         "id" BIGSERIAL PRIMARY KEY,
         "company_id" bigint,
-        "category_id" int,
+        "industry_id" int,
         "location_id" int,
         "title" varchar(255),
         "description" text,
@@ -272,7 +263,7 @@ export class InitialSchema1758740418414 implements MigrationInterface {
     await queryRunner.query(`DROP TABLE IF EXISTS "job_skills"`);
     await queryRunner.query(`DROP TABLE IF EXISTS "jobs"`);
     await queryRunner.query(`DROP TABLE IF EXISTS "salary_currencies"`);
-    await queryRunner.query(`DROP TABLE IF EXISTS "job_categories"`);
+    await queryRunner.query(`DROP TABLE IF EXISTS "industries"`);
     await queryRunner.query(`DROP TABLE IF EXISTS "locations"`);
     await queryRunner.query(`DROP TABLE IF EXISTS "companies"`);
     await queryRunner.query(`DROP TABLE IF EXISTS "industries"`);
