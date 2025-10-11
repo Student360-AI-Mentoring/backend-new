@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { AccountEntity } from '../entities/account.entity';
-import { AccountRepository } from './account.repository';
-import { Account } from '../../domain/account';
-import { AccountMapper } from '../mappers/account.mapper';
+import { AccountEntity } from '../../../../../database/entities';
+import { AccountRepository } from '../account.repository';
+import { Account } from '../../../domain/account';
+import { AccountMapper } from '../../mappers/account.mapper';
 
 @Injectable()
 export class AccountRelationalRepository implements AccountRepository {

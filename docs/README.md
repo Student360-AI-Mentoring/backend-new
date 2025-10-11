@@ -1,97 +1,50 @@
-# Documentation Overview
+# Overview
 
-This directory contains comprehensive documentation for the **multi-module NestJS application**. Each document serves a specific purpose to help developers understand and contribute to the codebase effectively.
+Thư mục này chứa bộ tài liệu toàn diện cho **ứng dụng NestJS đa mô-đun**. Mỗi tài liệu phục vụ một mục đích cụ thể giúp lập trình viên hiểu và đóng góp hiệu quả vào codebase.
 
-## 🏗️ Multi-Module Architecture
+## 📚 Cấu trúc Tài liệu
 
-This application follows a **multi-module architecture** pattern where each feature is encapsulated in its own module:
+**Hãy bắt đầu tại đây nếu bạn mới tham gia dự án:**
 
-## 📚 Documentation Structure
+1. **[Dev guide](developer-guide.md)** - Tổng hợp quy ước, mẫu và thực hành tốt nhất
+   - Cấu trúc và tổ chức mô-đun
+   - Mẫu xử lý lỗi (lỗi được định nghĩa sẵn)
+   - Quy ước controller và service
+   - Mẫu DTO và validation
+   - Quy ước viết tài liệu
+   - Hướng dẫn kiểm thử
 
-### For New Developers
+2. **[Hướng dẫn Pipeline](request-pipeline.md)** - Toàn bộ pipeline request/response
+   - Middleware, pipe, interceptor, filter
+   - Luồng xử lý lỗi
+   - Định dạng phản hồi
+   - Lưu ý về bảo mật và hiệu năng
 
-**Start here if you're new to the project:**
+3. **[Tài liệu cli](cmd-guideline.md)** - Tổng hợp nhanh các lệnh thường dùng
+   - Migration cơ sở dữ liệu (tạo, chạy, hoàn tác)
+   - Tạo dữ liệu mẫu
+   - Công cụ đảm bảo chất lượng code (linting, formatting, testing)
+   - Git hook và quy ước commit
 
-1. **[Developer Guide](developer-guide.md)** - Comprehensive coding conventions, patterns, and best practices
-   - Module structure and organization
-   - Error handling patterns (predefined errors)
-   - Controller and service conventions
-   - DTO patterns and validation
-   - Documentation patterns
-   - Testing guidelines
+4. **[Test API](api-testing.md)** - Tài liệu kiểm thử đầy đủ
+   - Cách sử dụng Swagger UI
+   - Tài liệu các endpoint hiện có
+   - Ví dụ curl và mẫu xác thực
+   - Thực hành tốt nhất khi kiểm thử
 
-2. **[Request Pipeline Guide](request-pipeline.md)** - Complete request/response pipeline
-   - Middleware, pipes, interceptors, filters
-   - Error handling flow
-   - Response formatting
-   - Security and performance considerations
+5. **[Hướng dẫn Cấu hình Ứng dụng](app-config.md)** - Thiết lập và mẫu cấu hình
+   - Biến môi trường
+   - Mẫu cấu hình mô-đun
+   - Cách sử dụng cấu hình type-safe
 
-### For Daily Development
+## 🎯 Best Practice
 
-1. **[Command Reference](cmd-guideline.md)** - Quick reference for common commands
-   - Database migrations (generate, run, revert)
-   - Data seeding
-   - Code quality tools (linting, formatting, testing)
-   - Git hooks and commit conventions
-
-2. **[API Testing Guide](api-testing.md)** - Complete testing guide
-   - Swagger UI usage
-   - Available endpoints documentation
-   - curl examples and authentication patterns
-   - Testing best practices
-
-3. **[App Configuration Guide](app-config.md)** - Configuration setup and patterns
-   - Environment variables
-   - Module configuration patterns
-   - Type-safe configuration usage
-
-## 🚀 Quick Start for New Developers
-
-1. **Read the [Developer Guide](developer-guide.md)** to understand coding patterns
-2. **Review [Request Pipeline](request-pipeline.md)** to understand how requests flow
-3. **Check [Command Reference](cmd-guideline.md)** for common commands
-4. **Reference [App Configuration](app-config.md)** when adding new config
-5. **Use [API Testing](api-testing.md)** to test your endpoints
-
-## 📋 Document Maintenance
-
-### When to Update Documentation
-
-- **Developer Guide**: When adding new patterns, conventions, or best practices
-- **Request Pipeline**: When modifying middleware, interceptors, or error handling
-- **Command Reference**: When adding new commands or common scenarios
-- **API Testing**: When adding new endpoints or changing existing ones
-- **App Configuration**: When adding new configuration options
-
-### Documentation Standards
-
-- Keep examples **realistic** and **up-to-date**
-- Use **clear headings** and **consistent formatting**
-- Include **code examples** for complex concepts
-- Add **cross-references** between related sections
-- Update **all relevant docs** when making architectural changes
-
-## 🔍 Finding Information
-
-| I want to... | Go to |
-|---------------|--------|
-| Build a new module | [Developer Guide - Module Structure](developer-guide.md#module-structure) |
-| Handle errors properly | [Developer Guide - Error Handling](developer-guide.md#error-handling-patterns) |
-| Write a controller | [Developer Guide - Controller Conventions](developer-guide.md#controller-conventions) |
-| Create DTOs with validation | [Developer Guide - DTO Patterns](developer-guide.md#dto-patterns) |
-| Understand the request flow | [Request Pipeline Guide](request-pipeline.md) |
-| Test an API endpoint | [API Testing Guide](api-testing.md) |
-| Add configuration | [App Configuration Guide](app-config.md) |
-| Run common commands | [Command Reference](cmd-guideline.md) |
-
-## 🎯 Best Practices
-
-1. **Read before coding** - Understand patterns before implementing
-2. **Follow conventions** - Consistency is key for maintainability
-3. **Update tests** - Keep test patterns aligned with documentation
-4. **Document changes** - Update relevant docs when changing architecture
-5. **Ask questions** - If documentation is unclear, suggest improvements
+1. **Đọc trước khi code** - Hiểu mẫu trước khi triển khai
+2. **Tuân thủ quy ước** - Tính nhất quán là chìa khóa cho khả năng bảo trì
+3. **Cập nhật kiểm thử** - Giữ mẫu kiểm thử đồng bộ với tài liệu
+4. **Ghi lại thay đổi** - Cập nhật tài liệu liên quan khi thay đổi kiến trúc
+5. **Đặt câu hỏi** - Nếu tài liệu chưa rõ ràng, hãy đề xuất cải thiện
 
 ---
 
-**💡 Tip**: Bookmark this README and the Developer Guide for quick reference during development!
+**💡 Mẹo**: Hãy đánh dấu README này và Hướng dẫn Nhà phát triển để tham khảo nhanh khi làm việc!

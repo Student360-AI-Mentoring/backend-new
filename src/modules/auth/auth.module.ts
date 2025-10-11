@@ -8,15 +8,12 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 
 // Entities
-import { AccountEntity } from './infrastructure/entities/account.entity';
-import { AccountTypeEntity } from './infrastructure/entities/account-type.entity';
-import { UserTokenEntity } from './infrastructure/entities/user-token.entity';
+import { AccountEntity, AccountTypeEntity, UserTokenEntity } from '../../database/entities';
 
 // Repositories
 import { AccountRepository } from './infrastructure/repositories/account.repository';
-import { AccountRelationalRepository } from './infrastructure/repositories/account-relational.repository';
+import { AccountRelationalRepository } from './infrastructure/repositories/impl/account-relational.repository';
 import { UserTokenRepository } from './infrastructure/repositories/user-token.repository';
-import { UserTokenRelationalRepository } from './infrastructure/repositories/user-token-relational.repository';
 
 // Strategies
 import { JwtStrategy } from './strategies/jwt.strategy';
@@ -24,6 +21,7 @@ import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 
 // Config
 import authConfig from './config/auth.config';
+import { UserTokenRelationalRepository } from './infrastructure/repositories/impl/user-token-relational.repository';
 
 @Module({
   imports: [

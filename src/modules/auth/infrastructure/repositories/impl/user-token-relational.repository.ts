@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan } from 'typeorm';
-import { UserTokenEntity } from '../entities/user-token.entity';
-import { UserTokenRepository } from './user-token.repository';
-import { UserToken } from '../../domain/user-token';
-import { UserTokenMapper } from '../mappers/user-token.mapper';
+import { UserTokenRepository } from '../user-token.repository';
+import { UserTokenEntity } from '../../../../../database/entities';
+import { UserTokenMapper } from '../../mappers/user-token.mapper';
+import { UserToken } from '@/modules/auth/domain/user-token';
 
 @Injectable()
 export class UserTokenRelationalRepository implements UserTokenRepository {

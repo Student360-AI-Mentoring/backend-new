@@ -20,13 +20,17 @@ export class StudentIdsService {
       throw StudentIdExceptions.StudentIdAlreadyExistsException();
     }
 
-    await this.studentIdRepository.create({
-      ...createStudentIdDto,
-      dateOfBirth: createStudentIdDto.dateOfBirth ? new Date(createStudentIdDto.dateOfBirth) : undefined,
+    const studentId = await this.studentIdRepository.create({
+      id: createStudentIdDto.id,
+      fullName: createStudentIdDto.fullName ?? null,
+      dateOfBirth: createStudentIdDto.dateOfBirth ? new Date(createStudentIdDto.dateOfBirth) : null,
+      university: createStudentIdDto.university ?? null,
+      major: createStudentIdDto.major ?? null,
+      enrollmentYear: createStudentIdDto.enrollmentYear ?? null,
+      graduationYear: createStudentIdDto.graduationYear ?? null,
     });
 
-    const savedStudentId = await this.studentIdRepository.findById(createStudentIdDto.id);
-    return this.toResponseDto(savedStudentId);
+    return this.toResponseDto(studentId);
   }
 
   async findAll(query: GetStudentIdsQueryDto): Promise<{ data: StudentIdResponseDto[]; pagination: IPagination }> {
@@ -59,10 +63,28 @@ export class StudentIdsService {
   }
 
   async update(id: string, updateStudentIdDto: UpdateStudentIdDto): Promise<StudentIdResponseDto> {
-    const updatedStudentId = await this.studentIdRepository.update(id, {
-      ...updateStudentIdDto,
-      dateOfBirth: updateStudentIdDto.dateOfBirth ? new Date(updateStudentIdDto.dateOfBirth) : undefined,
-    });
+    const updateData: Partial<Omit<StudentId, 'id' | 'createdAt' | 'updatedAt'>> = {};
+
+    if (updateStudentIdDto.fullName !== undefined) {
+      updateData.fullName = updateStudentIdDto.fullName ?? null;
+    }
+    if (updateStudentIdDto.dateOfBirth !== undefined) {
+      updateData.dateOfBirth = updateStudentIdDto.dateOfBirth ? new Date(updateStudentIdDto.dateOfBirth) : null;
+    }
+    if (updateStudentIdDto.university !== undefined) {
+      updateData.university = updateStudentIdDto.university ?? null;
+    }
+    if (updateStudentIdDto.major !== undefined) {
+      updateData.major = updateStudentIdDto.major ?? null;
+    }
+    if (updateStudentIdDto.enrollmentYear !== undefined) {
+      updateData.enrollmentYear = updateStudentIdDto.enrollmentYear ?? null;
+    }
+    if (updateStudentIdDto.graduationYear !== undefined) {
+      updateData.graduationYear = updateStudentIdDto.graduationYear ?? null;
+    }
+
+    const updatedStudentId = await this.studentIdRepository.update(id, updateData);
 
     if (!updatedStudentId) {
       throw StudentIdExceptions.StudentIdNotFoundException();

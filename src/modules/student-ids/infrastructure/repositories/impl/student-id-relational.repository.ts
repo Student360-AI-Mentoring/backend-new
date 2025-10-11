@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { StudentIdEntity } from '../entities/student-id.entity';
-import { StudentIdRepository } from './student-id.repository';
-import { StudentId } from '../../domain/student-id';
-import { StudentIdMapper } from '../mappers/student-id.mapper';
+import { StudentIdEntity } from '../../../../../database/entities';
+import { StudentIdRepository } from '../student-id.repository';
+import { StudentId } from '../../../domain/student-id';
+import { StudentIdMapper } from '../../mappers/student-id.mapper';
 
 @Injectable()
 export class StudentIdRelationalRepository implements StudentIdRepository {
@@ -13,22 +13,14 @@ export class StudentIdRelationalRepository implements StudentIdRepository {
     private readonly repository: Repository<StudentIdEntity>,
   ) {}
 
-  async create(data: {
-    id: string;
-    fullName?: string;
-    dateOfBirth?: Date;
-    university?: string;
-    major?: string;
-    enrollmentYear?: number;
-    graduationYear?: number;
-  }): Promise<{ id: string }> {
+  async create(data: Omit<StudentId, 'createdAt' | 'updatedAt'>): Promise<StudentId> {
     const entity = this.repository.create({
       ...data,
       dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
     });
 
     const savedEntity = await this.repository.save(entity);
-    return { id: savedEntity.id };
+    return StudentIdMapper.toDomain(savedEntity);
   }
 
   async findById(id: string): Promise<StudentId | null> {
@@ -58,14 +50,7 @@ export class StudentIdRelationalRepository implements StudentIdRepository {
 
   async update(
     id: string,
-    data: {
-      fullName?: string;
-      dateOfBirth?: Date;
-      university?: string;
-      major?: string;
-      enrollmentYear?: number;
-      graduationYear?: number;
-    },
+    data: Partial<Omit<StudentId, 'id' | 'createdAt' | 'updatedAt'>>,
   ): Promise<StudentId | null> {
     const entity = await this.repository.findOne({
       where: { id },

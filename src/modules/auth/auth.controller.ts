@@ -2,6 +2,7 @@ import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@n
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiExtraModels, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '@/common/decorators/user.decorator';
+import { Throttle } from '@/common/decorators/throttle.decorator';
 import { AuthDoc } from './constants/auth-doc.constants';
 import { AuthSuccessMessages } from './constants/auth.constants';
 import { AuthService } from './auth.service';
@@ -19,6 +20,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
+  @Throttle({ ttl: 300, limit: 3 }) // 3 registrations per 5 minutes
   @AuthDoc.RegisterSummary()
   @AuthDoc.RegisterSuccess()
   @AuthDoc.RegisterBadRequest()
@@ -29,6 +31,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @Throttle({ ttl: 60, limit: 5 }) // 5 login attempts per minute
   @AuthDoc.SignInSummary()
   @AuthDoc.SignInSuccess()
   @AuthDoc.SignInBadRequest()
@@ -39,6 +42,7 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @Throttle({ ttl: 60, limit: 10 }) // 10 refresh attempts per minute
   @AuthDoc.RefreshSummary()
   @AuthDoc.RefreshSuccess()
   @AuthDoc.RefreshBadRequest()

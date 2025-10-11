@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource, DataSourceOptions } from 'typeorm';
-import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_INTERCEPTOR, APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 // Common
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -13,9 +14,11 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 // Config
 import appConfig from './config/app.config';
 import databaseConfig from './database/config/database-config';
+import throttlerConfig from './config/throttler.config';
 import { TypeOrmConfigService } from './database/typeorm-config.service';
 import { StudentIdsModule } from './modules/student-ids/student-ids.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { AllConfigType } from './config/all-config.type';
 
 const infrastructureDatabaseModule = TypeOrmModule.forRootAsync({
   imports: [ConfigModule],
@@ -27,8 +30,21 @@ const infrastructureDatabaseModule = TypeOrmModule.forRootAsync({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, databaseConfig],
+      load: [appConfig, databaseConfig, throttlerConfig],
       envFilePath: ['.env'],
+    }),
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService<AllConfigType>) => {
+        const throttlerConf = configService.get('throttler', { infer: true });
+        return [
+          {
+            ttl: (throttlerConf?.ttl ?? 60) * 1000, // Convert to milliseconds
+            limit: throttlerConf?.limit ?? 10,
+          },
+        ];
+      },
     }),
     infrastructureDatabaseModule,
     AuthModule,
@@ -36,6 +52,10 @@ const infrastructureDatabaseModule = TypeOrmModule.forRootAsync({
   ],
   providers: [
     TypeOrmConfigService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
     {
       provide: APP_FILTER,
       useClass: HttpExceptionFilter,

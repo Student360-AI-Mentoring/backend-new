@@ -1,68 +1,68 @@
-# Command Reference
+# Tài liệu Lệnh Tham chiếu
 
-Quick reference guide for common development commands and scenarios.
+Hướng dẫn tham khảo nhanh các lệnh và tình huống phát triển thường gặp.
 
-## Database Migrations
+## Migration Cơ sở dữ liệu
 
-| Scenario | Command | When to use |
+| Kịch bản | Lệnh | Khi sử dụng |
 | --- | --- | --- |
-| Generate migration after entity changes | `npm run migration:generate -- src/database/migrations/<MigrationName>` | After adding/changing TypeORM entities |
-| Inspect the generated migration | check the new file in `src/database/migrations/` | Always review before running migrations |
-| Run pending migrations | `npm run migration:run` | Deploy schema changes to database |
-| Roll back the last migration | `npm run migration:revert` | When migration causes issues |
-| See which migrations are pending | `npm run migration:show` | Check migration status |
-| Create an empty migration | `npm run migration:create -- src/database/migrations/<MigrationName>` | For custom SQL or data migrations |
+| Tạo migration sau khi đổi entity | `npm run migration:generate -- src/database/migrations/<MigrationName>` | Sau khi thêm/thay đổi entity TypeORM |
+| Kiểm tra migration vừa tạo | Mở file mới ở `src/database/migrations/` | Luôn rà soát trước khi chạy migration |
+| Chạy các migration đang chờ | `npm run migration:run` | Triển khai thay đổi schema lên cơ sở dữ liệu |
+| Hoàn tác migration gần nhất | `npm run migration:revert` | Khi migration gây lỗi |
+| Xem migration nào còn chờ | `npm run migration:show` | Kiểm tra trạng thái migration |
+| Tạo migration trống | `npm run migration:create -- src/database/migrations/<MigrationName>` | Cho SQL tùy biến hoặc migration dữ liệu |
 
-## Data Seeding
+## Seed Dữ liệu
 
-| Scenario | Command | When to use |
+| Kịch bản | Lệnh | Khi sử dụng |
 | --- | --- | --- |
-| Execute the seed script | `npm run migration:seed` | Populate database with initial/test data |
-| Seed entry point | `src/database/seeds/run-seeds.ts` | Modify seed data or add new seeds |
+| Chạy script seed | `npm run migration:seed` | Đổ dữ liệu khởi tạo/kiểm thử vào cơ sở dữ liệu |
+| Điểm vào seed | `src/database/seeds/run-seeds.ts` | Chỉnh sửa hoặc bổ sung dữ liệu seed |
 
-## Build & Start Commands
+## Lệnh Build & Khởi chạy
 
-| Scenario | Command | When to use |
+| Kịch bản | Lệnh | Khi sử dụng |
 | --- | --- | --- |
-| Build the project for production | `npm run build` | Before deployment, after major changes |
-| Start the application (production) | `npm start` | Quick start without hot reload |
-| Start with hot reload (development) | `npm run start:dev` | Daily development work |
-| Start with debugging enabled | `npm run start:debug` | When debugging issues |
-| Start production build | `npm run start:prod` | Testing production build locally |
+| Build dự án cho production | `npm run build` | Trước khi deploy, sau thay đổi lớn |
+| Khởi chạy ứng dụng (production) | `npm start` | Khởi động nhanh không hot reload |
+| Khởi chạy với hot reload (development) | `npm run start:dev` | Công việc phát triển hằng ngày |
+| Khởi chạy kèm debug | `npm run start:debug` | Khi cần gỡ lỗi |
+| Chạy bản build production | `npm run start:prod` | Kiểm tra bản build production tại chỗ |
 
-## Code Quality & Testing
+## Chất lượng Code & Kiểm thử
 
-| Scenario | Command | When to use |
+| Kịch bản | Lệnh | Khi sử dụng |
 | --- | --- | --- |
-| Lint the project (auto-fix issues) | `npm run lint` | Before committing, after code changes |
-| Format code with Prettier | `npm run format` | Before committing, to standardize formatting |
-| Run the unit test suite | `npm test` | Regular testing, CI/CD |
-| Run tests in band mode | `npm test -- --runInBand --passWithNoTests` | When tests fail due to parallel execution |
-| Watch tests for changes | `npm run test:watch` | During test development |
-| Generate test coverage report | `npm run test:cov` | To check test coverage metrics |
-| Debug tests | `npm run test:debug` | When debugging failing tests |
-| Run end-to-end tests | `npm run test:e2e` | Before deployment, integration testing |
+| Lint dự án (sửa lỗi tự động) | `npm run lint` | Trước khi commit, sau khi chỉnh code |
+| Định dạng code bằng Prettier | `npm run format` | Trước khi commit, đảm bảo định dạng chuẩn |
+| Chạy toàn bộ unit test | `npm test` | Kiểm thử định kỳ, trong CI/CD |
+| Chạy test ở chế độ in-band | `npm test -- --runInBand --passWithNoTests` | Khi test fail do chạy song song |
+| Theo dõi test khi code thay đổi | `npm run test:watch` | Trong quá trình viết test |
+| Tạo báo cáo coverage | `npm run test:cov` | Kiểm tra chỉ số bao phủ kiểm thử |
+| Debug test | `npm run test:debug` | Khi cần gỡ lỗi test bị fail |
+| Chạy end-to-end test | `npm run test:e2e` | Trước khi deploy, kiểm thử tích hợp |
 
-(Husky runs Prettier + ESLint on staged files via `lint-staged`, enforces commit message conventions, and executes Jest before push.)
+(Husky chạy Prettier + ESLint trên file đã stage qua `lint-staged`, áp dụng quy ước commit message và thực thi Jest trước khi push.)
 
-## Git Hooks & Commit Conventions
+## Git Hooks & Quy ước Commit
 
-### Commit Message Format
-Follow [Conventional Commits](https://conventionalcommits.org/) format:
-- `feat:` - New features
-- `fix:` - Bug fixes
-- `docs:` - Documentation changes
-- `style:` - Code style changes (formatting, etc.)
-- `refactor:` - Code refactoring
-- `test:` - Adding or updating tests
-- `chore:` - Maintenance tasks
+### Định dạng Commit Message
+Tuân theo [Conventional Commits](https://conventionalcommits.org/):
+- `feat:` - Tính năng mới
+- `fix:` - Sửa lỗi
+- `docs:` - Thay đổi tài liệu
+- `style:` - Thay đổi phong cách code (định dạng, v.v.)
+- `refactor:` - Tái cấu trúc code
+- `test:` - Thêm hoặc cập nhật test
+- `chore:` - Công việc bảo trì
 
 ### Git Hooks
-Husky automatically runs the following checks:
-- **Pre-commit**: ESLint + Prettier on staged files
-- **Commit-msg**: Validates commit message format
-- **Pre-push**: Runs full test suite
+Husky tự chạy các bước kiểm tra sau:
+- **Pre-commit**: ESLint + Prettier trên file đã stage
+- **Commit-msg**: Kiểm tra định dạng commit message
+- **Pre-push**: Chạy toàn bộ test suite
 
-**Troubleshooting:**
-- If hooks don't trigger: Run `npm run prepare`
-- If tests fail before push: Fix tests or use `--no-verify` (not recommended)
+**Khắc phục sự cố:**
+- Nếu hook không hoạt động: chạy `npm run prepare`
+- Nếu test fail trước khi push: sửa test hoặc dùng `--no-verify` (không khuyến khích)

@@ -1,27 +1,9 @@
-import { StudentId } from '../../domain/student-id';
+  import { StudentId } from '../../domain/student-id';
 
 export abstract class StudentIdRepository {
-  abstract create(studentId: {
-    id: string;
-    fullName?: string;
-    dateOfBirth?: Date;
-    university?: string;
-    major?: string;
-    enrollmentYear?: number;
-    graduationYear?: number;
-  }): Promise<{ id: string }>;
+  abstract create(data: Omit<StudentId, 'createdAt' | 'updatedAt'>): Promise<StudentId>;
 
-  abstract findById(id: string): Promise<{
-    id: string;
-    fullName: string;
-    dateOfBirth: Date;
-    university: string;
-    major: string;
-    enrollmentYear: number;
-    graduationYear: number;
-    createdAt: Date;
-    updatedAt: Date;
-  } | null>;
+  abstract findById(id: string): Promise<StudentId | null>;
 
   abstract findAll(params: { page: number; limit: number }): Promise<{
     data: StudentId[];
@@ -30,39 +12,10 @@ export abstract class StudentIdRepository {
 
   abstract update(
     id: string,
-    data: {
-      fullName?: string;
-      dateOfBirth?: Date;
-      university?: string;
-      major?: string;
-      enrollmentYear?: number;
-      graduationYear?: number;
-    },
-  ): Promise<{
-    id: string;
-    fullName: string;
-    dateOfBirth: Date;
-    university: string;
-    major: string;
-    enrollmentYear: number;
-    graduationYear: number;
-    createdAt: Date;
-    updatedAt: Date;
-  } | null>;
+    data: Partial<Omit<StudentId, 'id' | 'createdAt' | 'updatedAt'>>,
+  ): Promise<StudentId | null>;
 
   abstract delete(id: string): Promise<void>;
 
-  abstract search(query: string): Promise<
-    Array<{
-      id: string;
-      fullName: string;
-      dateOfBirth: Date;
-      university: string;
-      major: string;
-      enrollmentYear: number;
-      graduationYear: number;
-      createdAt: Date;
-      updatedAt: Date;
-    }>
-  >;
+  abstract search(query: string): Promise<StudentId[]>;
 }

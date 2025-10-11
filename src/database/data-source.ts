@@ -12,7 +12,7 @@ export default new DataSource({
   username: process.env.DATABASE_USERNAME || 'postgres',
   password: process.env.DATABASE_PASSWORD || 'password',
   database: process.env.DATABASE_NAME || 'student_db',
-  entities: [join(__dirname, '..', '**', '*.entity.{ts,js}')],
+  entities: [join(__dirname, 'entities', '**', '*.entity.{ts,js}')],
   migrations: [join(__dirname, 'migrations', '*.{ts,js}')],
   migrationsTableName: 'migrations',
   synchronize: false,

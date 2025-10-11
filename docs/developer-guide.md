@@ -1,74 +1,70 @@
-# Developer Guide
+# Hướng dẫn Nhà phát triển
 
-Comprehensive coding conventions, patterns, and best practices for this NestJS multi-module application.
+Bộ quy ước mã hóa, mẫu và thực hành tốt nhất dành cho ứng dụng NestJS đa mô-đun này.
 
-## Table of Contents
+## Mục lục
 
-1. [Module Structure](#module-structure)
-2. [Error Handling Patterns](#error-handling-patterns)
-3. [Controller Conventions](#controller-conventions)
-4. [Service Layer Patterns](#service-layer-patterns)
-5. [DTO Patterns](#dto-patterns)
-6. [Documentation Patterns](#documentation-patterns)
-7. [Configuration Setup](#configuration-setup)
-8. [Code Style Guidelines](#code-style-guidelines)
+1. [Cấu trúc Mô-đun](#cau-truc-mo-dun)
+2. [Mẫu Xử lý Lỗi](#mau-xu-ly-loi)
+3. [Quy ước Controller](#quy-uoc-controller)
+4. [Mẫu Tầng Service](#mau-tang-service)
+5. [Mẫu DTO](#mau-dto)
+6. [Thiết lập Cấu hình](#thiet-lap-cau-hinh)
+7. [Hướng dẫn Phong cách Code](#huong-dan-phong-cach-code)
 
-## Multi-Module Architecture
+## Kiến trúc Đa mô-đun
 
-Each feature is encapsulated in its own module with clear boundaries:
+Mỗi tính năng được đóng gói trong một mô-đun riêng với ranh giới rõ ràng:
 
 ```
 src/modules/
-├── auth/              # Authentication & authorization
-├── student-ids/       # Student ID management
-└── (future modules)   # Users, roles, notifications, etc.
+├── auth/              # Xác thực & phân quyền
+├── student-ids/       # Quản lý mã số sinh viên
+└── (các mô-đun tương lai)   # Người dùng, vai trò, thông báo, v.v.
 ```
 
-## Module Structure
+## Cấu trúc Mô-đun
 
-### Standard Module Organization
+### Tổ chức Mô-đun Chuẩn
 
 ```
 src/modules/your-module/
 ├── constants/
-│   ├── your-module.constants.ts      # Error constants & success messages
-│   └── your-module-doc.constants.ts  # Swagger documentation decorators
+│   ├── your-module.constants.ts      # Hằng số lỗi & thông báo thành công
+│   └── your-module-doc.constants.ts  # Decorator tài liệu Swagger
 ├── domain/
-│   └── your-entity.ts                # Domain entity (business logic)
+│   └── your-entity.ts                # Thực thể domain (logic nghiệp vụ)
 ├── dto/
-│   ├── create-your-entity.dto.ts     # Create DTO with validation
-│   ├── update-your-entity.dto.ts     # Update DTO (partial)
-│   └── your-entity-response.dto.ts   # Response DTO
+│   ├── create-your-entity.dto.ts     # DTO tạo mới với validation
+│   ├── update-your-entity.dto.ts     # DTO cập nhật (partial)
+│   └── your-entity-response.dto.ts   # DTO phản hồi
 ├── infrastructure/
 │   ├── entities/
-│   │   └── your-entity.entity.ts     # Database entity (TypeORM)
+│   │   └── your-entity.entity.ts     # Thực thể cơ sở dữ liệu (TypeORM)
 │   ├── mappers/
-│   │   └── your-entity.mapper.ts     # Domain ↔ Infrastructure mapping
+│   │   └── your-entity.mapper.ts     # Chuyển đổi Domain ↔ Infrastructure
 │   └── repositories/
-│       ├── your-entity.repository.ts # Abstract repository interface
-│       └── your-entity-relational.repository.ts # TypeORM implementation
-├── your-module.controller.ts         # HTTP endpoints
-├── your-module.service.ts            # Business logic
-└── your-module.module.ts            # Module definition
+│       ├── your-entity.repository.ts # Interface repository trừu tượng
+│       └── your-entity-relational.repository.ts # Triển khai TypeORM
+├── your-module.controller.ts         # Endpoint HTTP
+├── your-module.service.ts            # Logic nghiệp vụ
+└── your-module.module.ts             # Định nghĩa mô-đun
 ```
 
-### Creating a New Module
+### Tạo Mô-đun Mới
 
-1. **Generate the module structure:**
-
-2. **Follow the directory structure above**
-
-3. **Create constants, DTOs, and infrastructure layers**
-
-4. **Register in `AppModule` if needed**
+1. **Sinh cấu trúc mô-đun**
+2. **Tuân theo cấu trúc thư mục như trên**
+3. **Tạo hằng số, DTO và tầng hạ tầng**
+4. **Đăng ký với `AppModule` nếu cần**
 
 ---
 
-## Error Handling Patterns
+## Mẫu Xử lý Lỗi
 
-### 1. Define Error Constants
+### 1. Định nghĩa Hằng số Lỗi
 
-**Create `constants/your-module.constants.ts`:**
+**Tạo `constants/your-module.constants.ts`:**
 
 ```typescript
 // src/modules/auth/constants/auth.constants.ts
@@ -103,28 +99,28 @@ export const AuthExceptions = {
 };
 ```
 
-### 2. Use in Services
+### 2. Sử dụng trong Service
 
-**❌ Don't do this:**
+**❌ Không nên:**
 ```typescript
 throw new NotFoundException(`Entity ${id} not found`);
 throw new ConflictException('Entity already exists');
 ```
 
-**✅ Do this:**
+**✅ Nên:**
 ```typescript
 throw AuthExceptions.UserAlreadyExistsException();
 ```
 
 ---
 
-## Controller Conventions
+## Quy ước Controller
 
-### 1. Controllers Should NOT Validate
+### 1. Controller KHÔNG kiểm tra dữ liệu
 
-Controllers should be thin and delegate everything to services. **No validation logic in controllers.**
+Controller phải gọn nhẹ và ủy quyền toàn bộ cho service. **Không viết validation trong controller.**
 
-**❌ Don't do this:**
+**❌ Không nên:**
 ```typescript
 @Post()
 async create(@Body() dto: CreateEntityDto) {
@@ -138,7 +134,7 @@ async create(@Body() dto: CreateEntityDto) {
 }
 ```
 
-**✅ Do this:**
+**✅ Nên:**
 ```typescript
 @Post()
 @EntityDoc.CreateSummary()
@@ -146,38 +142,38 @@ async create(@Body() dto: CreateEntityDto) {
 @EntityDoc.CreateBadRequest()
 @EntityDoc.CreateConflict()
 async create(@Body() dto: CreateEntityDto): Promise<EntityResponseDto> {
-  return this.service.create(dto); // return only needed data
+  return this.service.create(dto); // chỉ trả về dữ liệu cần thiết
 }
 ```
 
-### 2. What Controllers Should Return
+### 2. Controller nên trả về gì
 
-Controllers should return **plain data objects**. The `ResponseInterceptor` will wrap them in the standard `ApiResponse` format.
+Controller trả về **đối tượng dữ liệu thuần**. `ResponseInterceptor` sẽ tự gói theo chuẩn `ApiResponse`.
 
-**✅ Return patterns:**
+**✅ Mẫu trả về:**
 ```typescript
-// Single entity
+// Một thực thể
 return entityResponseDto;
 
-// Simple message
+// Thông báo đơn giản
 return { message: SUCCESS_MESSAGES.ENTITY_CREATED };
 
-// Void for deletions (204 No Content)
-return; // or Promise<void>
+// Không trả nội dung (204 No Content)
+return; // hoặc Promise<void>
 ```
 
-**❌ Don't wrap responses manually:**
+**❌ Không tự bọc phản hồi:**
 ```typescript
 return {
   success: true,
   data: entity,
   meta: { timestamp: new Date() }
-}; // ResponseInterceptor will do this
+}; // ResponseInterceptor đã xử lý phần này
 ```
 
-### 3. Use Documentation Decorators
+### 3. Dùng Decorator Tài liệu
 
-**Create reusable decorators in `constants/your-module-doc.constants.ts`:**
+**Tạo decorator tái sử dụng tại `constants/your-module-doc.constants.ts`:**
 
 ```typescript
 import { applyDecorators, HttpStatus } from '@nestjs/common';
@@ -212,7 +208,7 @@ export const EntityDoc = {
 };
 ```
 
-**Then use in controllers:**
+**Áp dụng trong controller:**
 ```typescript
 @Post()
 @EntityDoc.CreateSummary()
@@ -225,27 +221,27 @@ async create(@Body() dto: CreateEntityDto) {
 }
 ```
 
-### 4. HTTP Status Codes
+### 4. Mã trạng thái HTTP
 
-Use appropriate HTTP status codes:
+Sử dụng đúng mã trạng thái:
 
-- **200 OK** - Successful GET, PUT, PATCH
-- **201 Created** - Successful POST
-- **204 No Content** - Successful DELETE
-- **400 Bad Request** - Validation errors
-- **401 Unauthorized** - Authentication required
-- **403 Forbidden** - Authorization failed
-- **404 Not Found** - Resource not found
-- **409 Conflict** - Resource already exists
-- **500 Internal Server Error** - Unexpected errors
+- **200 OK** - GET, PUT, PATCH thành công
+- **201 Created** - POST thành công
+- **204 No Content** - DELETE thành công
+- **400 Bad Request** - Lỗi validation
+- **401 Unauthorized** - Yêu cầu đăng nhập
+- **403 Forbidden** - Không đủ quyền
+- **404 Not Found** - Không tìm thấy tài nguyên
+- **409 Conflict** - Tài nguyên đã tồn tại
+- **500 Internal Server Error** - Lỗi không mong muốn
 
 ---
 
-## Service Layer Patterns
+## Mẫu Tầng Service
 
-### 1. Service Responsibilities
+### 1. Vai trò của Service
 
-Services contain **business logic** and coordinate between repositories:
+Service chứa **logic nghiệp vụ** và điều phối giữa các repository:
 
 ```typescript
 @Injectable()
@@ -256,30 +252,30 @@ export class YourEntityService {
   ) {}
 
   async create(dto: CreateEntityDto): Promise<EntityResponseDto> {
-    // Business rule validation
+    // Kiểm tra quy tắc nghiệp vụ
     const existing = await this.repository.findByName(dto.name);
     if (existing) {
       throw YOUR_MODULE_ERRORS.ENTITY_ALREADY_EXISTS;
     }
 
-    // Business logic
+    // Xử lý nghiệp vụ
     const entity = await this.repository.create({
       ...dto,
       slug: this.generateSlug(dto.name),
       status: 'active',
     });
 
-    // Return response DTO
+    // Trả về DTO phản hồi
     return this.toResponseDto(entity);
   }
 
   private generateSlug(name: string): string {
-    // Business logic helper
+    // Hàm hỗ trợ nghiệp vụ
     return name.toLowerCase().replace(/\s+/g, '-');
   }
 
   private toResponseDto(entity: YourEntity): EntityResponseDto {
-    // Mapping logic
+    // Logic mapping
     const dto = new EntityResponseDto();
     dto.id = entity.id;
     dto.name = entity.name;
@@ -291,14 +287,14 @@ export class YourEntityService {
 }
 ```
 
-### 2. Service Naming Conventions
+### 2. Quy ước đặt tên Service
 
-- Use **descriptive method names**: `findById`, `findByEmail`, `createUser`, `updatePassword`
-- Use **async/await** for all asynchronous operations
-- Return **DTOs**, not domain entities directly
-- Keep methods **focused** and **single-responsibility**
+- Dùng **tên mô tả**: `findById`, `findByEmail`, `createUser`, `updatePassword`
+- Dùng **async/await** cho mọi thao tác bất đồng bộ
+- Trả về **DTO**, không trả trực tiếp domain entity
+- Giữ phương thức **tập trung** và **một trách nhiệm**
 
-### 3. Error Handling in Services
+### 3. Xử lý lỗi trong Service
 
 ```typescript
 async findById(id: string): Promise<EntityResponseDto> {
@@ -314,9 +310,9 @@ async findById(id: string): Promise<EntityResponseDto> {
 
 ---
 
-## DTO Patterns
+## Mẫu DTO
 
-### 1. Create DTOs with Validation
+### 1. DTO tạo mới với Validation
 
 **`dto/create-your-entity.dto.ts`:**
 
@@ -359,7 +355,7 @@ export class CreateYourEntityDto {
 }
 ```
 
-### 2. Update DTOs
+### 2. DTO cập nhật
 
 **`dto/update-your-entity.dto.ts`:**
 
@@ -370,7 +366,7 @@ import { CreateYourEntityDto } from './create-your-entity.dto';
 export class UpdateYourEntityDto extends PartialType(CreateYourEntityDto) {}
 ```
 
-### 3. Response DTOs
+### 3. DTO phản hồi
 
 **`dto/your-entity-response.dto.ts`:**
 
@@ -416,37 +412,37 @@ export class YourEntityResponseDto {
 }
 ```
 
-### 4. DTO Validation Rules
+### 4. Quy tắc validation cho DTO
 
-**Always provide custom context for validation:**
+**Luôn cung cấp context tùy chỉnh cho validation:**
 
 ```typescript
-// ✅ Good - explicit error context
+// ✅ Tốt - có context lỗi rõ ràng
 @IsNotEmpty({ context: ERRORS.ALEM01 })
 @IsEmail({}, { context: ERRORS.EMAIL01 })
 
-// ❌ Bad - no context (will show developer warning)
+// ❌ Không tốt - thiếu context (sẽ hiện cảnh báo cho developer)
 @IsNotEmpty()
 @IsEmail()
 ```
 
-**Use appropriate validators:**
+**Chọn validator phù hợp:**
 
-- `@IsNotEmpty()` - Required fields
-- `@IsOptional()` - Optional fields
-- `@IsString()`, `@IsInt()`, `@IsEmail()` - Type validation
-- `@MinLength()`, `@MaxLength()` - String length
-- `@Min()`, `@Max()` - Number range
-- `@Matches()` - Regex patterns
-- `@Transform()` - Data transformation
+- `@IsNotEmpty()` - Trường bắt buộc
+- `@IsOptional()` - Trường tùy chọn
+- `@IsString()`, `@IsInt()`, `@IsEmail()` - Kiểm tra kiểu
+- `@MinLength()`, `@MaxLength()` - Độ dài chuỗi
+- `@Min()`, `@Max()` - Khoảng giá trị số
+- `@Matches()` - Theo biểu thức chính quy
+- `@Transform()` - Biến đổi dữ liệu
 
 ---
 
-## Configuration Setup
+## Thiết lập Cấu hình
 
-### 1. Creating Module Configuration
+### 1. Tạo cấu hình mô-đun
 
-When your module needs configuration, follow this pattern:
+Khi mô-đun cần cấu hình riêng, làm theo mẫu sau:
 
 **`config/your-module.config.ts`:**
 
@@ -489,9 +485,9 @@ export type YourModuleConfig = {
 };
 ```
 
-### 2. Register Configuration
+### 2. Đăng ký cấu hình
 
-**Add to `app.module.ts`:**
+**Thêm vào `app.module.ts`:**
 
 ```typescript
 import yourModuleConfig from '@/modules/your-module/config/your-module.config';
@@ -508,7 +504,7 @@ import yourModuleConfig from '@/modules/your-module/config/your-module.config';
 export class AppModule {}
 ```
 
-### 3. Use Configuration in Services
+### 3. Sử dụng cấu hình trong Service
 
 ```typescript
 @Injectable()
@@ -523,49 +519,49 @@ export class YourModuleService {
 
   async someOperation() {
     const config = this.getModuleConfig();
-    // Use config.apiKey, config.timeout, etc.
+    // Sử dụng config.apiKey, config.timeout, v.v.
   }
 }
 ```
 
 ---
 
-## Code Style Guidelines
+## Hướng dẫn Phong cách Code
 
-### 1. Naming Conventions
+### 1. Quy ước đặt tên
 
-**Files and Directories:**
-- Use **kebab-case**: `user-profile.service.ts`, `auth-login.dto.ts`
-- Be descriptive: `student-id-response.dto.ts` not `response.dto.ts`
+**File và thư mục:**
+- Dùng **kebab-case**: `user-profile.service.ts`, `auth-login.dto.ts`
+- Tên mô tả: `student-id-response.dto.ts` thay vì `response.dto.ts`
 
-**Classes:**
-- Use **PascalCase**: `UserProfileService`, `AuthLoginDto`
-- Suffix by type: `Service`, `Controller`, `Module`, `Entity`, `Dto`
+**Class:**
+- Dùng **PascalCase**: `UserProfileService`, `AuthLoginDto`
+- Thêm hậu tố theo loại: `Service`, `Controller`, `Module`, `Entity`, `Dto`
 
-**Methods and Variables:**
-- Use **camelCase**: `findUserById`, `createNewAccount`
-- Be descriptive: `isPasswordValid` not `isValid`
+**Phương thức và biến:**
+- Dùng **camelCase**: `findUserById`, `createNewAccount`
+- Tên mô tả: `isPasswordValid` thay vì `isValid`
 
-**Constants:**
-- Use **SCREAMING_SNAKE_CASE**: `USER_ALREADY_EXISTS`, `MAX_LOGIN_ATTEMPTS`
+**Hằng số:**
+- Dùng **SCREAMING_SNAKE_CASE**: `USER_ALREADY_EXISTS`, `MAX_LOGIN_ATTEMPTS`
 
-### 2. Import Organization
+### 2. Tổ chức import
 
 ```typescript
-// 1. Node modules
+// 1. Thư viện Node
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
-// 2. Internal modules (absolute paths)
+// 2. Module nội bộ (đường dẫn tuyệt đối)
 import { BusinessException } from '@/common/exceptions';
 import { UserRepository } from '@/modules/users/infrastructure/repositories';
 
-// 3. Relative imports (same module)
+// 3. Import tương đối (cùng mô-đun)
 import { CreateUserDto } from './dto/create-user.dto';
 import { USER_ERRORS } from './constants/user.constants';
 ```
 
-### 3. Method Organization
+### 3. Tổ chức phương thức
 
 ```typescript
 @Injectable()
@@ -573,35 +569,35 @@ export class YourService {
   // 1. Constructor
   constructor(private readonly repository: YourRepository) {}
 
-  // 2. Public methods (alphabetical)
+  // 2. Hàm public (theo bảng chữ cái)
   async create(dto: CreateDto): Promise<ResponseDto> {}
   async delete(id: string): Promise<void> {}
   async findById(id: string): Promise<ResponseDto> {}
   async update(id: string, dto: UpdateDto): Promise<ResponseDto> {}
 
-  // 3. Private methods (alphabetical)
+  // 3. Hàm private (theo bảng chữ cái)
   private generateSlug(name: string): string {}
   private toResponseDto(entity: Entity): ResponseDto {}
   private validateBusinessRules(data: any): void {}
 }
 ```
 
-### 4. Error Handling Best Practices
+### 4. Thực hành xử lý lỗi
 
 ```typescript
-// ✅ Good - specific, actionable errors
+// ✅ Tốt - lỗi cụ thể, dễ hành động
 throw USER_ERRORS.EMAIL_ALREADY_EXISTS;
 throw USER_ERRORS.INVALID_PASSWORD_FORMAT;
 
-// ❌ Bad - generic, unclear errors
+// ❌ Không tốt - lỗi chung chung
 throw new Error('Something went wrong');
 throw new BadRequestException('Invalid data');
 ```
 
-### 5. Async/Await Usage
+### 5. Sử dụng Async/Await
 
 ```typescript
-// ✅ Good
+// ✅ Tốt
 async create(dto: CreateDto): Promise<ResponseDto> {
   const existing = await this.repository.findByEmail(dto.email);
   if (existing) {
@@ -610,7 +606,7 @@ async create(dto: CreateDto): Promise<ResponseDto> {
   return await this.repository.create(dto);
 }
 
-// ❌ Bad - mixing promises and async/await
+// ❌ Không tốt - trộn promise và async/await
 async create(dto: CreateDto): Promise<ResponseDto> {
   return this.repository.findByEmail(dto.email)
     .then(existing => {
@@ -622,18 +618,18 @@ async create(dto: CreateDto): Promise<ResponseDto> {
 
 ---
 
-## Summary Checklist
+## Bảng kiểm Tóm tắt
 
-When creating a new module, ensure you have:
+Khi tạo mô-đun mới, hãy đảm bảo:
 
-- [ ] **Standard directory structure** (domain, dto, infrastructure, constants)
-- [ ] **Predefined error constants** with appropriate status codes
-- [ ] **Clean controllers** (no validation, use doc decorators)
-- [ ] **Business logic in services** (error handling, data transformation)
-- [ ] **DTOs with validation contexts** (custom error contexts)
-- [ ] **Documentation decorators** for Swagger
-- [ ] **Configuration setup** (if needed)
-- [ ] **Response DTOs** (not domain entities)
-- [ ] **Consistent naming** and **import organization**
+- [ ] **Cấu trúc thư mục chuẩn** (domain, dto, infrastructure, constants)
+- [ ] **Hằng số lỗi định nghĩa sẵn** với mã trạng thái phù hợp
+- [ ] **Controller sạch** (không validation, dùng decorator tài liệu)
+- [ ] **Logic nghiệp vụ trong service** (xử lý lỗi, chuyển đổi dữ liệu)
+- [ ] **DTO có context validation** (context lỗi tùy chỉnh)
+- [ ] **Decorator tài liệu** cho Swagger
+- [ ] **Thiết lập cấu hình** (khi cần)
+- [ ] **DTO phản hồi** (không trả domain entity)
+- [ ] **Đặt tên & tổ chức import nhất quán**
 
-This guide ensures consistency across all modules and provides a clear path for new developers to contribute effectively to the codebase.
+Hướng dẫn này đảm bảo tính nhất quán cho mọi mô-đun và giúp lập trình viên mới nhanh chóng đóng góp hiệu quả vào codebase.

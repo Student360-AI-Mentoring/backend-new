@@ -1,59 +1,59 @@
-# Application Configuration
+# Cấu hình Ứng dụng
 
-This service centralizes app-specific settings through `src/config/app.config.ts`. The configuration is loaded by Nest's `ConfigModule` and exposed to the rest of the app as the `app` namespace. Use `configService.get<AppConfig>('app')` to retrieve a strongly-typed object anywhere in the codebase.
+Dịch vụ này gom tập trung các thiết lập đặc thù của ứng dụng thông qua `src/config/app.config.ts`. Cấu hình được nạp bởi `ConfigModule` của Nest và cung cấp cho toàn bộ ứng dụng dưới namespace `app`. Dùng `configService.get<AppConfig>('app')` để lấy đối tượng có kiểu rõ ràng ở bất cứ đâu trong codebase.
 
-## Why Use ConfigService Instead of process.env?
+## Vì sao nên dùng ConfigService thay vì process.env?
 
-### ❌ Problems with Direct process.env Usage
+### ❌ Vấn đề khi truy cập trực tiếp process.env
 
-**1. No Type Safety:**
+**1. Không có an toàn kiểu:**
 ```typescript
-// ❌ No compile-time checks
+// ❌ Không kiểm tra ở thời điểm biên dịch
 const port = process.env.PORT; // string | undefined
-const timeout = Number(process.env.TIMEOUT); // Could be NaN
+const timeout = Number(process.env.TIMEOUT); // Có thể là NaN
 ```
 
-**2. No Validation:**
+**2. Không có xác thực:**
 ```typescript
-// ❌ Invalid values cause runtime errors
-const maxConnections = Number(process.env.MAX_CONNECTIONS); // Could be 0, negative, or NaN
+// ❌ Giá trị không hợp lệ gây lỗi lúc chạy
+const maxConnections = Number(process.env.MAX_CONNECTIONS); // Có thể bằng 0, âm hoặc NaN
 ```
 
-**3. Scattered Configuration Logic:**
+**3. Logic cấu hình bị rải rác:**
 ```typescript
-// ❌ Configuration logic duplicated everywhere
+// ❌ Logic cấu hình bị lặp ở khắp nơi
 const dbHost = process.env.DB_HOST || 'localhost';
 const dbPort = Number(process.env.DB_PORT) || 5432;
-// Same defaults repeated in multiple files
+// Cùng một giá trị mặc định được lặp lại trong nhiều file
 ```
 
-**4. No Environment-Specific Defaults:**
+**4. Không có mặc định theo môi trường:**
 ```typescript
-// ❌ Hard to manage different environments
+// ❌ Khó quản lý nhiều môi trường
 const apiUrl = process.env.NODE_ENV === 'production'
   ? process.env.PROD_API_URL
   : process.env.DEV_API_URL || 'http://localhost:3000';
 ```
 
-**5. Testing Difficulties:**
+**5. Khó kiểm thử:**
 ```typescript
-// ❌ Hard to mock in tests
-process.env.DATABASE_URL = 'test://...'; // Global mutation
+// ❌ Khó giả lập trong kiểm thử
+process.env.DATABASE_URL = 'test://...'; // Đột biến toàn cục
 ```
 
-### ✅ Benefits of ConfigService
+### ✅ Lợi ích của ConfigService
 
-**1. Type Safety & IntelliSense:**
+**1. An toàn kiểu & IntelliSense:**
 ```typescript
-// ✅ Strongly typed with autocompletion
+// ✅ Kiểu mạnh với gợi ý tự động
 const appConfig = this.configService.getOrThrow('app', { infer: true });
-const port = appConfig.port; // number (guaranteed)
-const name = appConfig.name; // string (guaranteed)
+const port = appConfig.port; // number (đảm bảo)
+const name = appConfig.name; // string (đảm bảo)
 ```
 
-**2. Centralized Validation:**
+**2. Xác thực tập trung:**
 ```typescript
-// ✅ Validated once at startup
+// ✅ Được kiểm tra một lần khi khởi động
 class AppEnvironment {
   @IsInt()
   @Min(1)
@@ -67,9 +67,9 @@ class AppEnvironment {
 }
 ```
 
-**3. Single Source of Truth:**
+**3. Một nguồn sự thật duy nhất:**
 ```typescript
-// ✅ Configuration logic centralized
+// ✅ Logic cấu hình nằm tập trung
 export default registerAs('app', () => {
   validateConfig(process.env, AppEnvironment);
 
@@ -81,9 +81,9 @@ export default registerAs('app', () => {
 });
 ```
 
-**4. Environment-Aware Defaults:**
+**4. Mặc định theo môi trường:**
 ```typescript
-// ✅ Smart environment handling
+// ✅ Xử lý thông minh theo môi trường
 return {
   frontendDomain: process.env.FRONTEND_DOMAIN ||
     (process.env.NODE_ENV === 'production'
@@ -93,66 +93,66 @@ return {
 };
 ```
 
-### Key Benefits
+### Điểm mạnh chính
 
-1. **Type Safety**: Compile-time checks and IntelliSense support
-2. **Validation**: Configuration errors caught at startup, not runtime
-3. **Centralized**: Single source of truth for each configuration namespace
-4. **Environment-Aware**: Smart defaults based on NODE_ENV
-5. **Better DX**: Clear error messages and self-documenting schemas
+1. **An toàn kiểu**: Kiểm tra từ lúc biên dịch và hỗ trợ IntelliSense
+2. **Xác thực**: Bắt lỗi cấu hình ngay khi khởi động, không phải lúc runtime
+3. **Tập trung**: Mỗi namespace cấu hình có một nguồn thống nhất
+4. **Nhận biết môi trường**: Mặc định thông minh dựa trên NODE_ENV
+5. **Cải thiện DX**: Thông báo lỗi rõ ràng và schema tự mô tả
 
-## Available Settings
+## Thiết lập sẵn có
 
-| Environment variable | Default | Description |
+| Biến môi trường | Mặc định | Mô tả |
 | --- | --- | --- |
-| `NODE_ENV` | `development` | Controls environment-sensitive behavior. Swagger auto-enables when not `production`. |
-| `APP_NAME` | `Student API` | Identifier used for boot logs (`new Logger(appConfig.name)`). |
-| `APP_PORT` / `PORT` | `3000` | Port used when starting the HTTP server. If unset, the app will still default to `3000`. |
-| `FRONTEND_DOMAIN` | `http://localhost:3000` | Optional origin allowed in CORS configuration. Falls back to `http://localhost:3000` when absent. |
-| `API_PREFIX` | `api` | Global route prefix added in `main.ts` via `app.setGlobalPrefix`. |
-| `CORS_ORIGIN` | `http://localhost:3000` | Primary CORS origin setting for cross-origin requests. |
-| `CORS_CREDENTIALS` | `true` | Enable credentials in CORS requests (cookies, authorization headers). |
-| `JWT_SECRET` | – | **Required** secret key for signing JWT tokens. Must be changed in production. |
-| `JWT_EXPIRES_IN` | `24h` | JWT token expiration time (accepts formats like '1d', '2h', '30m'). |
-| `SWAGGER_ENABLED` | `true` | Enable/disable Swagger documentation endpoint at `/docs`. |
-| `SWAGGER_TITLE` | `Student API` | Title displayed in Swagger documentation. |
-| `SWAGGER_DESCRIPTION` | `Student Management API Documentation` | Description shown in Swagger UI. |
-| `SWAGGER_VERSION` | `1.0.0` | API version displayed in documentation. |
-| `SWAGGER_TAG` | `student-api` | Default tag for Swagger operations. |
+| `NODE_ENV` | `development` | Điều khiển hành vi phụ thuộc môi trường. Swagger tự bật khi không phải `production`. |
+| `APP_NAME` | `Student API` | Định danh dùng trong log khởi động (`new Logger(appConfig.name)`). |
+| `APP_PORT` / `PORT` | `3000` | Cổng khi khởi chạy HTTP server. Nếu không đặt, ứng dụng vẫn mặc định `3000`. |
+| `FRONTEND_DOMAIN` | `http://localhost:3000` | Origin tùy chọn cho cấu hình CORS. Rơi về `http://localhost:3000` khi trống. |
+| `API_PREFIX` | `api` | Tiền tố route toàn cục thêm trong `main.ts` thông qua `app.setGlobalPrefix`. |
+| `CORS_ORIGIN` | `http://localhost:3000` | Origin chính cho các request cross-origin. |
+| `CORS_CREDENTIALS` | `true` | Cho phép gửi thông tin đăng nhập trong request CORS (cookie, header authorization). |
+| `JWT_SECRET` | – | **Bắt buộc**: khóa bí mật để ký JWT. Phải thay đổi ở môi trường production. |
+| `JWT_EXPIRES_IN` | `24h` | Thời gian hết hạn của JWT (chấp nhận các định dạng như '1d', '2h', '30m'). |
+| `SWAGGER_ENABLED` | `true` | Bật/tắt endpoint tài liệu Swagger tại `/docs`. |
+| `SWAGGER_TITLE` | `Student API` | Tiêu đề hiển thị trong tài liệu Swagger. |
+| `SWAGGER_DESCRIPTION` | `Student Management API Documentation` | Mô tả hiển thị trong Swagger UI. |
+| `SWAGGER_VERSION` | `1.0.0` | Phiên bản API trong tài liệu. |
+| `SWAGGER_TAG` | `student-api` | Tag mặc định cho các thao tác Swagger. |
 
-## Usage Patterns
+## Mẫu sử dụng
 
-- **Bootstrap logger**: `appConfig.name` changes the label on startup logs so multiple services are easy to distinguish.
-- **Routing**: `appConfig.apiPrefix` ensures controller routes are always served under `/api` (or whatever you configure) without hard-coding strings.
-- **CORS**: The bootstrap routine prefers `CORS_ORIGIN`, then `appConfig.frontendDomain`, then the local fallback. Setting `FRONTEND_DOMAIN` gives an app-level default for all environments.
-- **Port selection**: the Nest application listens on `appConfig.port`, keeping the port logic in one place instead of scattering env lookups throughout the code.
+- **Bootstrap logger**: `appConfig.name` thay đổi nhãn log khởi động giúp phân biệt nhiều dịch vụ dễ dàng.
+- **Routing**: `appConfig.apiPrefix` đảm bảo mọi controller phục vụ dưới `/api` (hoặc giá trị bạn cấu hình) mà không phải hard-code chuỗi.
+- **CORS**: Quy trình khởi động ưu tiên `CORS_ORIGIN`, sau đó `appConfig.frontendDomain`, cuối cùng là giá trị fallback cục bộ. Đặt `FRONTEND_DOMAIN` giúp có mặc định cấp ứng dụng cho mọi môi trường.
+- **Chọn port**: Ứng dụng Nest lắng nghe trên `appConfig.port`, giữ logic port ở một nơi thay vì rải rác các lần đọc env.
 
-## Multi-Module Configuration
+## Cấu hình Đa mô-đun
 
-Each feature module can define its own configuration namespace for better organization and maintainability.
+Mỗi mô-đun tính năng có thể định nghĩa namespace cấu hình riêng để dễ tổ chức và bảo trì.
 
-### Current Module Structure
+### Cấu trúc mô-đun hiện tại
 
 ```
 src/config/
-├── app.config.ts           # Core application settings
-├── all-config.type.ts      # Global configuration type
-└── app-config.type.ts      # App-specific configuration type
+├── app.config.ts           # Cài đặt cốt lõi của ứng dụng
+├── all-config.type.ts      # Kiểu cấu hình toàn cục
+└── app-config.type.ts      # Kiểu cấu hình riêng của app
 
 src/database/config/
-├── database-config.ts      # Database connection settings
-└── database-config.type.ts # Database configuration type
+├── database-config.ts      # Thiết lập kết nối cơ sở dữ liệu
+└── database-config.type.ts # Kiểu cấu hình cơ sở dữ liệu
 
-src/modules/auth/config/    # (Future) Authentication settings
-src/modules/mail/config/    # (Future) Email service settings
-src/modules/upload/config/  # (Future) File upload settings
+src/modules/auth/config/    # (Tương lai) Cấu hình xác thực
+src/modules/mail/config/    # (Tương lai) Cấu hình dịch vụ email
+src/modules/upload/config/  # (Tương lai) Cấu hình upload tệp
 ```
 
-## Adding Your Own Config Namespace
+## Thêm namespace cấu hình của riêng bạn
 
-Follow this pattern whenever a feature module needs its own configuration (mail, file storage, external auth providers, etc.).
+Áp dụng mẫu này khi mô-đun tính năng cần cấu hình riêng (mail, lưu trữ tệp, nhà cung cấp xác thực bên ngoài, v.v.).
 
-1. **Create the config loader** in your module. Example for `MailConfig`:
+1. **Tạo loader cấu hình** trong mô-đun. Ví dụ cho `MailConfig`:
 
    ```ts
    // src/modules/mail/config/mail.config.ts
@@ -183,7 +183,7 @@ Follow this pattern whenever a feature module needs its own configuration (mail,
    });
    ```
 
-2. **Register the config namespace** inside `AppModule` so it is loaded globally:
+2. **Đăng ký namespace cấu hình** trong `AppModule` để nạp toàn cục:
 
    ```ts
    // src/app.module.ts
@@ -202,7 +202,7 @@ Follow this pattern whenever a feature module needs its own configuration (mail,
    export class AppModule {}
    ```
 
-3. **Extend `AllConfigType` (when in use)** – the project ships with `src/config/all-config.type.ts` exposing the `app` and `database` namespaces:
+3. **Mở rộng `AllConfigType` (khi được sử dụng)** – dự án cung cấp sẵn `src/config/all-config.type.ts` với namespace `app` và `database`:
 
    ```ts
    // src/config/all-config.type.ts
@@ -214,11 +214,11 @@ Follow this pattern whenever a feature module needs its own configuration (mail,
      app: AppConfig;
      database: TDatabaseConfig;
      mail: MailConfig;
-     // add other namespaces here
+     // thêm các namespace khác tại đây
    };
    ```
 
-4. **Inject the typed config in your services**:
+4. **Inject cấu hình có kiểu trong service**:
 
    ```ts
    import { ConfigService } from '@nestjs/config';
@@ -249,22 +249,22 @@ Follow this pattern whenever a feature module needs its own configuration (mail,
    }
    ```
 
-   Passing `{ infer: true }` lets TypeScript follow the shape of the selected namespace, making it much harder to mistype configuration keys.
+   Tham số `{ infer: true }` giúp TypeScript suy ra hình dạng namespace đã chọn, hạn chế tối đa việc gõ sai khóa cấu hình.
 
-5. **Stop reading `process.env` directly** in feature code. Load values through `ConfigService` so everything benefits from the namespace validation you defined in the module loader.
+5. **Dừng đọc trực tiếp `process.env`** trong code tính năng. Hãy lấy giá trị thông qua `ConfigService` để mọi thứ kế thừa phần xác thực namespace bạn đã định nghĩa trong loader mô-đun.
 
    ```ts
-   // ✅ Do this inside your service
+   // ✅ Thực hiện trong service của bạn
    const mailConfig = this.configService.getOrThrow('mail', { infer: true });
    const frontendUrl = this.configService.getOrThrow('app.frontendDomain', { infer: true });
    ```
 
    ```ts
-   // ❌ Avoid this pattern
-   const mailHost = process.env.MAIL_HOST; // skips validation and duplicates config logic
+   // ❌ Tránh mẫu này
+   const mailHost = process.env.MAIL_HOST; // bỏ qua bước xác thực và lặp lại logic
    const frontendUrl = process.env.FRONTEND_DOMAIN ?? 'http://localhost:3000';
    ```
 
-   When you need new values, add them to the module's config loader and matching type definition before consuming them so every caller reuses the validated namespace.
+   Khi cần giá trị mới, hãy thêm chúng vào loader cấu hình của mô-đun và kiểu tương ứng trước khi sử dụng để mọi nơi đều dùng chung namespace đã xác thực.
 
-With these steps in place, you can gradually grow `AllConfigType` as more modules expose their own configuration objects, providing a consistent pattern for future development.
+Với các bước này, bạn có thể mở rộng `AllConfigType` dần dần khi nhiều mô-đun cung cấp đối tượng cấu hình riêng, đảm bảo mẫu làm việc nhất quán cho các phát triển về sau.

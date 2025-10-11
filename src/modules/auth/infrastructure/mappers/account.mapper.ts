@@ -1,5 +1,5 @@
 import { Account } from '../../domain/account';
-import { AccountEntity } from '../entities/account.entity';
+import { AccountEntity } from '../../../../database/entities';
 
 export class AccountMapper {
   static toDomain(entity: AccountEntity): Account {

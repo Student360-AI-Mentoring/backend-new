@@ -1,36 +1,36 @@
-# API Testing Guide
+# Hướng dẫn Kiểm thử API
 
-## Quick Start
+## Bắt đầu Nhanh
 
-The easiest way to test the API is through Swagger UI:
+Cách dễ nhất để kiểm thử API là thông qua Swagger UI:
 
-1. **Start the application** (see main [README.md](../README.md) for setup instructions)
-2. **Open Swagger UI** at `http://localhost:3000/docs`
-3. **Test endpoints** directly in the browser interface
+1. **Khởi chạy ứng dụng** (xem [README.md](../README.md) chính để biết hướng dẫn thiết lập)
+2. **Mở Swagger UI** tại `http://localhost:3000/docs`
+3. **Thử nghiệm các endpoint** trực tiếp trong giao diện trình duyệt
 
-## Available Endpoints
+## Endpoint Hiện có
 
-### Authentication Module
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - User login
-- `POST /api/auth/refresh` - Refresh JWT token
+### Mô-đun Xác thực
+- `POST /api/auth/register` - Đăng ký người dùng mới
+- `POST /api/auth/login` - Đăng nhập người dùng
+- `POST /api/auth/refresh` - Làm mới token JWT
 
-### Student IDs Module
-- `GET /api/student-ids` - List all student IDs
-- `POST /api/student-ids` - Create new student ID
-- `GET /api/student-ids/{id}` - Get student ID by ID
-- `PUT /api/student-ids/{id}` - Update student ID
-- `DELETE /api/student-ids/{id}` - Delete student ID
+### Mô-đun Student IDs
+- `GET /api/student-ids` - Liệt kê toàn bộ student ID
+- `POST /api/student-ids` - Tạo student ID mới
+- `GET /api/student-ids/{id}` - Lấy student ID theo ID
+- `PUT /api/student-ids/{id}` - Cập nhật student ID
+- `DELETE /api/student-ids/{id}` - Xóa student ID
 
-## Using Swagger UI
+## Sử dụng Swagger UI
 
-### Testing Flow:
-1. **Register/Login** to get authentication token
-2. **Authorize** using the `Authorize` button in Swagger UI
-3. **Test protected endpoints** with automatic token inclusion
+### Quy trình kiểm thử:
+1. **Đăng ký/Đăng nhập** để lấy token xác thực
+2. **Ủy quyền** bằng nút `Authorize` trong Swagger UI
+3. **Thử nghiệm endpoint bảo vệ** với token được tự động gắn vào
 
-### Response Format:
-All API responses follow this standard format:
+### Định dạng phản hồi:
+Mọi phản hồi API đều tuân theo định dạng chuẩn sau:
 ```json
 {
   "success": true,
@@ -43,12 +43,12 @@ All API responses follow this standard format:
 }
 ```
 
-## Alternative Testing Methods
+## Phương thức kiểm thử thay thế
 
-### Using curl
-If you prefer command-line testing, here are basic curl examples:
+### Sử dụng curl
+Nếu bạn thích kiểm thử bằng dòng lệnh, đây là một số ví dụ cơ bản:
 
-**Register:**
+**Đăng ký:**
 ```bash
 curl -X POST http://localhost:3000/api/auth/register \
   -H "Content-Type: application/json" \
@@ -58,7 +58,7 @@ curl -X POST http://localhost:3000/api/auth/register \
   }'
 ```
 
-**Login:**
+**Đăng nhập:**
 ```bash
 curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
@@ -68,24 +68,24 @@ curl -X POST http://localhost:3000/api/auth/login \
   }'
 ```
 
-**Authenticated Request:**
+**Request có xác thực:**
 ```bash
-# Replace YOUR_JWT_TOKEN with token from login response
+# Thay YOUR_JWT_TOKEN bằng token nhận được sau khi đăng nhập
 curl -X GET http://localhost:3000/api/student-ids \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
-### Using Postman/Insomnia
-1. Import the API collection from Swagger UI
-2. Set up environment variables for base URL and tokens
-3. Use collection runner for automated testing
+### Sử dụng Postman/Insomnia
+1. Import collection API từ Swagger UI
+2. Cấu hình biến môi trường cho base URL và token
+3. Dùng collection runner để kiểm thử tự động
 
-## Testing Best Practices
+## Thực hành Kiểm thử Tốt nhất
 
-1. **Start with Authentication** - Most endpoints require valid JWT tokens
-2. **Check Response Format** - Verify all responses follow the standard format
-3. **Test Error Cases** - Try invalid data to see error handling
-4. **Use Request IDs** - Each response includes a unique request_id for debugging
-5. **Monitor Logs** - Check application logs for detailed request/response information
+1. **Bắt đầu bằng xác thực** - Hầu hết endpoint yêu cầu token JWT hợp lệ
+2. **Kiểm tra định dạng phản hồi** - Đảm bảo mọi phản hồi theo đúng mẫu
+3. **Kiểm thử tình huống lỗi** - Thử dữ liệu không hợp lệ để kiểm tra xử lý lỗi
+4. **Dùng Request ID** - Mỗi phản hồi đều có request_id duy nhất phục vụ debug
+5. **Theo dõi log** - Xem log ứng dụng để biết chi tiết request/response
 
-For detailed endpoint documentation, schemas, and response examples, use the Swagger UI interface at `/docs`.
+Để xem chi tiết tài liệu endpoint, schema và ví dụ phản hồi, hãy sử dụng Swagger UI tại `/docs`.

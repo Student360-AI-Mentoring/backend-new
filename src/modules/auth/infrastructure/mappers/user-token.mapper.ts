@@ -1,5 +1,5 @@
 import { UserToken } from '../../domain/user-token';
-import { UserTokenEntity } from '../entities/user-token.entity';
+import { UserTokenEntity } from '../../../../database/entities';
 
 export class UserTokenMapper {
   static toDomain(entity: UserTokenEntity): UserToken {

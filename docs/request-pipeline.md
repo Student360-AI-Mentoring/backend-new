@@ -1,73 +1,73 @@
-# Request Pipeline Guide
+# Hướng dẫn Pipeline Request
 
-## Key Points
+## Ý Chính
 
-- Every request receives a correlation id from `src/common/middlewares/request-id.middleware.ts` and the same id is echoed on logs and responses.
-- Input validation is centralized in `CustomValidationPipe`, which transforms DTOs, enforces whitelisting, and emits structured error details (with `ALEM*` fallbacks) when constraints are missing custom contexts.
-- Controllers and services return plain data or `{ data, pagination }` objects; global interceptors create the public response envelope and convert properties to `snake_case`.
-- `HttpExceptionFilter` normalizes every thrown error into the shared `ApiResponse` format and logs with severity based on the HTTP status code.
+- Mỗi request nhận một correlation id từ `src/common/middlewares/request-id.middleware.ts` và id này được ghi lại trong log cũng như phản hồi.
+- Việc kiểm tra dữ liệu đầu vào được tập trung trong `CustomValidationPipe`, chuyển đổi DTO, bật whitelist và trả về chi tiết lỗi có cấu trúc (fallback `ALEM*` nếu thiếu context tùy chỉnh).
+- Controller và service chỉ trả về dữ liệu thuần hoặc đối tượng `{ data, pagination }`; các interceptor toàn cục xây dựng lớp bọc phản hồi công khai và chuyển khóa sang `snake_case`.
+- `HttpExceptionFilter` chuẩn hóa mọi lỗi thành định dạng `ApiResponse` dùng chung và log với cấp độ phù hợp dựa trên HTTP status code.
 
-## End-to-End Flow
+## Luồng End-to-End
 
 ```
-Client → Express middleware (request id, helmet, compression) → Global pipes → Guards (per route) → Controller → Service
+Client → Express middleware (request id, helmet, compression) → Global pipes → Guards (theo route) → Controller → Service
        → ResponseInterceptor → TransformInterceptor → Express response
-       ↘ on error: HttpExceptionFilter → standardized error envelope
+       ↘ khi lỗi: HttpExceptionFilter → gói lỗi chuẩn hóa
 ```
 
-`LoggingInterceptor` surrounds the full Nest execution so that both the inbound request and the final response (success or error) are registered with duration metrics.
+`LoggingInterceptor` bao quanh toàn bộ quá trình thực thi của Nest, do đó cả request vào và phản hồi cuối cùng (thành công hoặc lỗi) đều được ghi nhận kèm thời gian xử lý.
 
-## Component Roles
+## Vai Trò Thành Phần
 
-- **Middleware**: Express-level functions that run before Nest handles the request; ideal for cross-cutting concerns like correlation IDs, security headers, or compression.
-- **Pipes**: Classes implementing `PipeTransform` that can transform or validate incoming data before it hits controllers; perfect for DTO validation and normalization.
-- **Guards**: Authorization checkpoints that decide whether a request can proceed to route handlers, e.g., JWT authentication.
-- **Interceptors**: Wrappers around the controller/service execution that can transform outgoing data, augment metadata, or log performance.
-- **Exception Filters**: Catch-all components that map thrown errors into the standardized HTTP/JSON shape while handling logging duties.
+- **Middleware**: Hàm mức Express chạy trước khi Nest xử lý request; lý tưởng cho các mối quan tâm xuyên suốt như correlation ID, header bảo mật hoặc nén.
+- **Pipe**: Lớp triển khai `PipeTransform` dùng để biến đổi/kiểm tra dữ liệu trước khi vào controller; phù hợp cho validation và chuẩn hóa DTO.
+- **Guard**: Điểm kiểm soát phân quyền quyết định request có được phép tới handler hay không, ví dụ guard JWT.
+- **Interceptor**: Lớp bao quanh controller/service, có thể biến đổi dữ liệu trả về, bổ sung metadata hoặc log hiệu năng.
+- **Exception Filter**: Bắt mọi lỗi phát sinh và ánh xạ về cấu trúc HTTP/JSON chuẩn trong khi vẫn chịu trách nhiệm log.
 
-## Bootstrap & Express Layer
+## Bootstrap & Lớp Express
 
 File: `src/main.ts`
 
-- Applies `requestIdMiddleware` before any Nest processing so the `X-Request-Id` header is always present.
-- Enables security middleware (`helmet`) and HTTP compression to match production behaviour locally.
-- Configures CORS from environment variables, defaulting to the configured frontend domain.
-- Sets a global API prefix (`appConfig.apiPrefix`) so every module automatically sits under the same namespace.
-- Registers the global validation pipe and exception filter (redundantly enforced through `AppModule` providers for unit-test scenarios).
-- Optionally exposes Swagger (disabled only when `SWAGGER_ENABLED=false` in production).
+- Áp dụng `requestIdMiddleware` trước mọi xử lý của Nest để header `X-Request-Id` luôn hiện diện.
+- Bật middleware bảo mật (`helmet`) và nén HTTP để môi trường local giống production.
+- Cấu hình CORS từ biến môi trường, mặc định về domain frontend được định nghĩa.
+- Thiết lập prefix API toàn cục (`appConfig.apiPrefix`) để mọi mô-đun dùng chung namespace.
+- Đăng ký global validation pipe và exception filter (được khai báo dư phòng trong `AppModule` để phục vụ unit test).
+- Swagger chỉ hiển thị khi `SWAGGER_ENABLED` không bị đặt `false` ở môi trường production.
 
-## Request Correlation Middleware
+## Middleware Gắn ID Request
 
 File: `src/common/middlewares/request-id.middleware.ts`
 
-- Reuses an incoming `X-Request-Id` header when present; otherwise generates a UUID.
-- Stores the id on `req.requestId` so interceptors, guards, and services can reuse it without re-reading headers.
-- Ensures the same id is written back to the outgoing response headers.
+- Tái sử dụng header `X-Request-Id` nếu client truyền vào; nếu không sẽ sinh UUID mới.
+- Ghi id vào `req.requestId` để interceptor, guard và service dùng lại mà không cần đọc header.
+- Đảm bảo id giống nhau được trả về trong response headers.
 
-## Validation Stage
+## Giai Đoạn Validation
 
 File: `src/common/pipes/validation.pipe.ts`
 
-- Runs for DTO classes that carry class-validator metadata and skips primitive parameters.
-- Transforms plain payloads into their DTO class instances via `class-transformer`.
-- Enforces `whitelist` + `forbidNonWhitelisted`, immediately rejecting unknown properties with error code `ALEM05`.
-- Pulls custom constraint contexts (`{ context: { code, message, details } }`) into the response; falls back to `ALEM02` when no context is provided.
-- Converts property names to `snake_case` before returning validation details so they match the API contract.
-- Throws `CommonExceptions.ValidationException`, which the filter later turns into a `400` response with a `details` array (`ValidationDetail`).
+- Chạy với các DTO có metadata class-validator và bỏ qua tham số nguyên thủy.
+- Chuyển payload thuần thành instance DTO thông qua `class-transformer`.
+- Bật `whitelist` + `forbidNonWhitelisted`, loại ngay thuộc tính lạ với mã lỗi `ALEM05`.
+- Lấy `{ context: { code, message, details } }` từ decorator validation đưa vào phản hồi; fallback `ALEM02` nếu không có context.
+- Chuyển tên thuộc tính sang `snake_case` trước khi trả chi tiết lỗi để khớp hợp đồng API.
+- Ném `CommonExceptions.ValidationException`, sau đó filter chuyển thành phản hồi `400` chứa mảng `details` (`ValidationDetail`).
 
-## Guards (Opt-in)
+## Guard (Tùy chọn)
 
 File: `src/common/guards/auth.guard.ts`
 
-- `JwtAuthGuard` extracts the Bearer token, verifies it with `JwtService`, and assigns the decoded payload to `request.user`.
-- Throws `UnauthorizedException` on missing or invalid tokens; the global exception filter will map that to the standard error format.
-- Attach the guard with `@UseGuards(JwtAuthGuard)` on endpoints that require authentication.
+- `JwtAuthGuard` đọc Bearer token, xác thực bằng `JwtService` và gán payload giải mã vào `request.user`.
+- Ném `UnauthorizedException` khi token thiếu hoặc không hợp lệ; exception filter sẽ ánh xạ về định dạng lỗi chuẩn.
+- Đính guard với `@UseGuards(JwtAuthGuard)` trên endpoint yêu cầu đăng nhập.
 
-## Controller & Service Responsibilities
+## Trách Nhiệm Controller & Service
 
-- Controllers should accept validated DTOs and return domain DTOs or simple objects. They **must not** build response envelopes manually.
-- Services encapsulate business rules and throw `CustomException` instances (either directly from `CommonExceptions` or feature-specific factories such as `AuthExceptions` in `src/modules/auth/constants/auth.constants.ts`).
-- When pagination is needed, return `{ data, pagination }`. The response interceptor will preserve both sections.
+- Controller nhận DTO đã được validate và trả về DTO domain hoặc đối tượng đơn giản. **Không** tự xây dựng lớp bọc phản hồi.
+- Service bao gói quy tắc nghiệp vụ và ném `CustomException` (dùng `CommonExceptions` hoặc factory đặc thù như `AuthExceptions` trong `src/modules/auth/constants/auth.constants.ts`).
+- Khi cần phân trang, trả `{ data, pagination }`; response interceptor sẽ giữ nguyên hai phần này.
 
 ```typescript
 // src/modules/auth/auth.service.ts
@@ -77,55 +77,55 @@ if (existingAccount) {
 return { data: users, pagination };
 ```
 
-## Global Interceptors
+## Interceptor Toàn cục
 
-Declared in `src/app.module.ts` via `APP_INTERCEPTOR` so they apply to every HTTP route.
+Khai báo trong `src/app.module.ts` qua `APP_INTERCEPTOR` để áp dụng cho mọi route HTTP.
 
 - **LoggingInterceptor (`src/common/interceptors/logging.interceptor.ts`)**
 
-  - Logs method, URL, and body when the request arrives.
-  - Logs status code and elapsed time once the downstream processing finishes.
-  - Gives full visibility for both successful and failed pipelines thanks to `tap()`.
+  - Log method, URL và body khi request tới.
+  - Log status code và thời gian thực thi sau khi pipeline hoàn tất.
+  - Theo dõi đầy đủ cả luồng thành công và thất bại nhờ `tap()`.
 
 - **ResponseInterceptor (`src/common/interceptors/response.interceptor.ts`)**
 
-  - Ensures the request id is set on both the request object and the outgoing headers.
-  - Wraps handler output into `{ success, status, data?, meta, pagination? }` without mutating the original HTTP status.
-  - Supports two return patterns: a raw value (becomes `data`) or an object that already contains `data` and optional `pagination`.
-  - Leaves room for interceptors or filters downstream by returning an RxJS stream.
+  - Đảm bảo request id có trên đối tượng request và header phản hồi.
+  - Bọc kết quả handler thành `{ success, status, data?, meta, pagination? }` mà không đổi HTTP status gốc.
+  - Hỗ trợ hai mẫu trả về: giá trị thuần (trở thành `data`) hoặc đối tượng đã chứa `data` và `pagination`.
+  - Giữ không gian cho interceptor/filter phía sau bằng cách trả về stream RxJS.
 
 - **TransformInterceptor (`src/common/interceptors/transform.interceptor.ts`)**
-  - Converts all object keys to `snake_case` (recursing arrays and nested objects).
-  - Serializes `Date` instances to ISO strings, including the meta timestamp produced by the response interceptor.
-  - Leaves scalar values untouched, so primitives (e.g., booleans) return as-is.
+  - Chuyển mọi khóa đối tượng sang `snake_case` (đệ quy cả array và object lồng nhau).
+  - Chuẩn hóa `Date` thành ISO string, gồm cả timestamp trong `meta`.
+  - Không đụng tới giá trị nguyên thủy, nên boolean/number vẫn được giữ nguyên.
 
-The practical order is: Logging (outermost) → Response → Transform. This makes sure the response wrapper is built before the payload is converted to `snake_case`, and the logger captures the final status code.
+Thứ tự thực tế: Logging (lớp ngoài cùng) → Response → Transform. Cách này đảm bảo wrapper phản hồi được dựng trước khi payload chuyển sang `snake_case`, đồng thời logger có được status code cuối cùng.
 
-## Exception Handling
+## Xử Lý Ngoại Lệ
 
-### Custom Exceptions
+### Custom Exception
 
 File: `src/common/exceptions/custom.exception.ts`
 
-- Extends Nest's `HttpException` with an additional `code` and optional `details` payload.
-- Factory helpers include: `InternalException`, `ValidationException`, `UserAlreadyExistsException`, `UserNotFoundException`, and `InvalidCredentialsException`.
-- Feature modules (e.g., `AuthExceptions`) build on top of the same class to keep error semantics consistent across the codebase.
+- Mở rộng `HttpException` của Nest với trường `code` và `details` tùy chọn.
+- Các factory sẵn có: `InternalException`, `ValidationException`, `UserAlreadyExistsException`, `UserNotFoundException`, `InvalidCredentialsException`.
+- Những mô-đun chức năng (ví dụ `AuthExceptions`) kế thừa cùng lớp để giữ ngữ nghĩa lỗi nhất quán.
 
 ### Global Filter
 
 File: `src/common/filters/http-exception.filter.ts`
 
-- Captures everything thrown during request processing.
-- Resolution order:
-  1. `CustomException` → returns status from the instance and copies `{ code, message, details }` into the response body.
-  2. Any `HttpException` → maps to an error with `code = HttpStatus[status]` and `message = exception.message`.
-  3. Unknown errors → wrapped in `CommonExceptions.InternalException` with status 500.
-- Uses `ErrorResponseHelper` (`src/utils/helpers/error-response.helper.ts`) to build the final `ApiResponse`, including `meta.request_id` and ISO timestamps.
-- Logging policy: client errors (`4xx`) log as warnings; server errors (`5xx`) log as errors with stack traces when available.
+- Bắt mọi lỗi trong quá trình xử lý request.
+- Thứ tự phân giải:
+  1. `CustomException` → dùng status của instance và copy `{ code, message, details }` vào body.
+  2. `HttpException` bất kỳ → ánh xạ về lỗi với `code = HttpStatus[status]`, `message = exception.message`.
+  3. Lỗi không xác định → bọc trong `CommonExceptions.InternalException` với status 500.
+- Dùng `ErrorResponseHelper` (`src/utils/helpers/error-response.helper.ts`) để xây dựng `ApiResponse`, bao gồm `meta.request_id` và timestamp ISO.
+- Chính sách log: lỗi client (`4xx`) log ở mức warning; lỗi server (`5xx`) log ở mức error kèm stack trace nếu có.
 
-## Response Formats
+## Định Dạng Phản Hồi
 
-### Success
+### Thành công
 
 ```json
 {
@@ -150,7 +150,7 @@ File: `src/common/filters/http-exception.filter.ts`
 }
 ```
 
-### Validation Error
+### Lỗi Validation
 
 ```json
 {
@@ -181,7 +181,7 @@ File: `src/common/filters/http-exception.filter.ts`
 }
 ```
 
-### Business Error
+### Lỗi Nghiệp vụ
 
 ```json
 {
@@ -199,14 +199,14 @@ File: `src/common/filters/http-exception.filter.ts`
 }
 ```
 
-## Extending the Pipeline
+## Mở Rộng Pipeline
 
-- Add new global behaviour as interceptors instead of duplicating logic in controllers. Register them with `APP_INTERCEPTOR` to preserve ordering.
-- When introducing new validation rules, always supply `{ context: { code, message, details } }` on the decorator so the API receives meaningful error codes.
-- Use `CustomException` factories for reusable domain errors; prefer to define them alongside feature modules (see `AuthExceptions`).
-- If a feature needs additional request metadata, attach it to the request object after the middleware stage so interceptors and filters can read it.
+- Thêm hành vi toàn cục bằng interceptor thay vì lặp logic trong controller. Đăng ký với `APP_INTERCEPTOR` để giữ thứ tự.
+- Khi bổ sung rule validation mới, luôn cung cấp `{ context: { code, message, details } }` để API có mã lỗi rõ ràng.
+- Sử dụng factory `CustomException` cho lỗi domain tái sử dụng; nên định nghĩa cạnh mô-đun tính năng (xem `AuthExceptions`).
+- Nếu tính năng cần metadata bổ sung cho request, gắn nó sau giai đoạn middleware để interceptor và filter có thể đọc được.
 
-## Reference Types
+## Kiểu Tham Chiếu
 
 File: `src/type.d.ts`
 
@@ -221,4 +221,4 @@ export interface ApiResponse<T = unknown> {
 }
 ```
 
-Keep this file in sync whenever the response contract evolves.
+Hãy giữ file này đồng bộ mỗi khi hợp đồng phản hồi thay đổi.

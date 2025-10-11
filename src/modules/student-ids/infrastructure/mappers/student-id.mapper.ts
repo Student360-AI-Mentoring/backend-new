@@ -1,5 +1,5 @@
 import { StudentId } from '../../domain/student-id';
-import { StudentIdEntity } from '../entities/student-id.entity';
+import { StudentIdEntity } from '../../../../database/entities';
 
 export class StudentIdMapper {
   static toDomain(entity: StudentIdEntity): StudentId {
