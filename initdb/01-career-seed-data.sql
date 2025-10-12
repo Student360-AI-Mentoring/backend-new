@@ -68,19 +68,27 @@ VALUES
 (9, 'Docker', 'DevOps', 'Containerization and deployment', 'acc_008', 'acc_008', NOW(), NOW()),
 (10, 'Machine Learning', 'AI/ML', 'Artificial intelligence and data modeling', 'acc_009', 'acc_009', NOW(), NOW());
 
--- Industries (10 records)
-INSERT INTO industries (id, name, description)
+-- Industries (15 records - với parent_id để tạo cấu trúc phân cấp)
+INSERT INTO industries (id, parent_id, name, description)
 VALUES
-(1, 'Information Technology', 'Software, hardware, and IT services'),
-(2, 'Finance', 'Banking, investment, and insurance'),
-(3, 'Education', 'Schools, universities, and training institutions'),
-(4, 'Healthcare', 'Medical services and pharmaceutical'),
-(5, 'Manufacturing', 'Production and industrial operations'),
-(6, 'Retail', 'Consumer goods and services'),
-(7, 'Consulting', 'Business advisory and professional services'),
-(8, 'Media & Entertainment', 'Publishing, broadcasting, and digital content'),
-(9, 'Government', 'Public sector and administration'),
-(10, 'Non-Profit', 'Charitable organizations and NGOs');
+-- Parent industries
+(1, NULL, 'Information Technology', 'Software, hardware, and IT services'),
+(2, NULL, 'Finance', 'Banking, investment, and insurance'),
+(3, NULL, 'Education', 'Schools, universities, and training institutions'),
+(4, NULL, 'Healthcare', 'Medical services and pharmaceutical'),
+(5, NULL, 'Manufacturing', 'Production and industrial operations'),
+(6, NULL, 'Retail', 'Consumer goods and services'),
+(7, NULL, 'Consulting', 'Business advisory and professional services'),
+(8, NULL, 'Media & Entertainment', 'Publishing, broadcasting, and digital content'),
+(9, NULL, 'Government', 'Public sector and administration'),
+(10, NULL, 'Non-Profit', 'Charitable organizations and NGOs'),
+-- Child industries under IT
+(11, 1, 'Software Development', 'Custom software and application development'),
+(12, 1, 'Cybersecurity', 'Information security and data protection'),
+(13, 1, 'Cloud Computing', 'Cloud infrastructure and services'),
+-- Child industries under Finance
+(14, 2, 'Investment Banking', 'Corporate finance and M&A advisory'),
+(15, 2, 'Fintech', 'Financial technology and digital payments');
 
 -- Companies (10 records)
 INSERT INTO companies (id, name, description, website, industry_id, size, contact_email, logo_url, address)
@@ -110,20 +118,6 @@ VALUES
 (9, 'Bien Hoa'),
 (10, 'Thu Dau Mot');
 
--- Job Categories (10 records)
-INSERT INTO job_categories (id, parent_id, name, description)
-VALUES
-(1, NULL, 'Software Development', 'All software development roles'),
-(2, NULL, 'Finance & Accounting', 'Financial and accounting positions'),
-(3, NULL, 'Education & Training', 'Teaching and educational roles'),
-(4, NULL, 'Healthcare', 'Medical and healthcare positions'),
-(5, 1, 'Backend Developer', 'Server-side application development'),
-(6, 1, 'Frontend Developer', 'Client-side UI/UX development'),
-(7, 1, 'Full Stack Developer', 'End-to-end application development'),
-(8, 2, 'Financial Analyst', 'Financial planning and analysis'),
-(9, 5, 'Java Backend Developer', 'Backend development specifically with Java'),
-(10, 5, 'Python Backend Developer', 'Backend development specifically with Python');
-
 -- Salary Currencies (10 records)
 INSERT INTO salary_currencies (code, name, symbol)
 VALUES
@@ -138,18 +132,18 @@ VALUES
 ('THB', 'Thai Baht', '฿'),
 ('KRW', 'Korean Won', '₩');
 
--- Jobs (10 records)
+-- Jobs (10 records) - Sử dụng industry_id thay vì category_id
 INSERT INTO jobs (
-  id, company_id, category_id, location_id, title, description, requirements,
+  id, company_id, industry_id, location_id, title, description, requirements,
   job_type, experience_level, salary_min, salary_max, salary_currency,
   application_method, application_url, application_email, apply_count,
   deadline, is_active, created_by, updated_by, created_at, updated_at
 )
 VALUES
-(1, 1, 5, 1, 'Backend Developer Intern', 'Work with NestJS and PostgreSQL', 'Knowledge of Node.js or TypeScript',
+(1, 1, 11, 1, 'Backend Developer Intern', 'Work with NestJS and PostgreSQL', 'Knowledge of Node.js or TypeScript',
  'internship', 'internship', 3000000, 5000000, 'VND', 'internal', NULL, 'apply@techcorp.com',
  0, '2025-12-31', TRUE, 'acc_001', 'acc_001', NOW(), NOW()),
-(2, 2, 6, 2, 'Frontend Engineer', 'Develop React applications for finance dashboards', 'Experience with React or Angular',
+(2, 2, 15, 2, 'Frontend Engineer', 'Develop React applications for finance dashboards', 'Experience with React or Angular',
  'full_time', 'junior', 1200, 2000, 'USD', 'external', 'https://finserve.com/careers/frontend', NULL,
  0, '2025-11-30', TRUE, 'acc_002', 'acc_002', NOW(), NOW()),
 (3, 3, 3, 3, 'Education Technology Specialist', 'Develop educational software solutions', 'Experience in education and technology',
@@ -158,22 +152,22 @@ VALUES
 (4, 4, 4, 4, 'Healthcare Data Analyst', 'Analyze medical data and create reports', 'Background in healthcare and data analysis',
  'full_time', 'junior', 15000000, 25000000, 'VND', 'external', 'https://healthplus.com/jobs/analyst', NULL,
  3, '2025-11-15', TRUE, 'acc_004', 'acc_004', NOW(), NOW()),
-(5, 1, 5, 5, 'Manufacturing Software Engineer', 'Develop industrial automation systems', 'Engineering background with programming skills',
+(5, 5, 5, 5, 'Manufacturing Software Engineer', 'Develop industrial automation systems', 'Engineering background with programming skills',
  'full_time', 'senior', 2000, 3000, 'USD', 'internal', NULL, 'jobs@manufacorp.com',
  8, '2026-01-31', TRUE, 'acc_005', 'acc_005', NOW(), NOW()),
-(6, 7, 6, 6, 'Full Stack Developer', 'Build e-commerce platform features', 'Experience with React, Node.js, and databases',
+(6, 6, 11, 6, 'Full Stack Developer', 'Build e-commerce platform features', 'Experience with React, Node.js, and databases',
  'full_time', 'middle', 1500, 2500, 'USD', 'external', 'https://retailmax.com/careers/fullstack', NULL,
  12, '2025-12-15', TRUE, 'acc_006', 'acc_006', NOW(), NOW()),
-(7, 8, 7, 7, 'Business Analyst Intern', 'Support consulting projects and client analysis', 'Strong analytical and communication skills',
+(7, 7, 7, 7, 'Business Analyst Intern', 'Support consulting projects and client analysis', 'Strong analytical and communication skills',
  'internship', 'internship', 5000000, 8000000, 'VND', 'internal', NULL, 'recruit@consultpro.com',
  2, '2025-10-30', TRUE, 'acc_007', 'acc_007', NOW(), NOW()),
-(8, 6, 8, 8, 'UI/UX Designer', 'Design user interfaces for media applications', 'Portfolio in UI/UX design',
+(8, 8, 8, 8, 'UI/UX Designer', 'Design user interfaces for media applications', 'Portfolio in UI/UX design',
  'full_time', 'junior', 1000, 1800, 'USD', 'external', 'https://mediaverse.com/jobs/designer', NULL,
  7, '2025-11-20', TRUE, 'acc_008', 'acc_008', NOW(), NOW()),
-(9, 1, 9, 9, 'Government Software Developer', 'Build public service digital platforms', 'Security clearance and development experience',
+(9, 9, 1, 9, 'Government Software Developer', 'Build public service digital platforms', 'Security clearance and development experience',
  'full_time', 'senior', 35000000, 50000000, 'VND', 'internal', NULL, 'careers@govtech.com',
  15, '2026-02-28', TRUE, 'acc_009', 'acc_009', NOW(), NOW()),
-(10, 3, 10, 10, 'Environmental Education Coordinator', 'Develop and deliver environmental education programs', 'Background in environmental science and education',
+(10, 10, 10, 10, 'Environmental Education Coordinator', 'Develop and deliver environmental education programs', 'Background in environmental science and education',
  'part_time', 'middle', 600, 1000, 'USD', 'external', 'https://greenfuture.org/jobs/coordinator', NULL,
  4, '2025-12-01', TRUE, 'acc_010', 'acc_010', NOW(), NOW());
 
@@ -238,17 +232,17 @@ VALUES
 (11, '10M - 20M VND', 'salary_range', '{"min":10000000,"max":20000000}', 'Salary from 10M to 20M VND', true, now(), now()),
 (12, '20M - 30M VND', 'salary_range', '{"min":20000000,"max":30000000}', 'Salary from 20M to 30M VND', true, now(), now()),
 (13, '30M+ VND', 'salary_range', '{"min":30000000}', 'Salary above 30M VND', true, now(), now()),
--- Job Categories
-(100, 'Software Development', 'job_category', NULL, 'All software development roles', true, now(), now()),
-(101, 'Finance & Accounting', 'job_category', NULL, 'Financial and accounting positions', true, now(), now()),
-(102, 'Education & Training', 'job_category', NULL, 'Teaching and educational roles', true, now(), now()),
-(103, 'Healthcare', 'job_category', NULL, 'Medical and healthcare positions', true, now(), now()),
-(104, 'Backend Developer', 'job_category', NULL, 'Server-side application development', true, now(), now()),
-(105, 'Frontend Developer', 'job_category', NULL, 'Client-side UI/UX development', true, now(), now()),
-(106, 'Full Stack Developer', 'job_category', NULL, 'End-to-end application development', true, now(), now()),
-(107, 'Financial Analyst', 'job_category', NULL, 'Financial planning and analysis', true, now(), now()),
-(108, 'Java Backend Developer', 'job_category', NULL, 'Backend development with Java', true, now(), now()),
-(109, 'Python Backend Developer', 'job_category', NULL, 'Backend development with Python', true, now(), now());
+-- Industries (thay thế job_categories)
+(100, 'Information Technology', 'industry', NULL, 'Software, hardware, and IT services', true, now(), now()),
+(101, 'Finance', 'industry', NULL, 'Banking, investment, and insurance', true, now(), now()),
+(102, 'Education', 'industry', NULL, 'Teaching and educational roles', true, now(), now()),
+(103, 'Healthcare', 'industry', NULL, 'Medical and healthcare positions', true, now(), now()),
+(104, 'Software Development', 'industry', NULL, 'Custom software and application development', true, now(), now()),
+(105, 'Fintech', 'industry', NULL, 'Financial technology and digital payments', true, now(), now()),
+(106, 'Consulting', 'industry', NULL, 'Business advisory and professional services', true, now(), now()),
+(107, 'Media & Entertainment', 'industry', NULL, 'Publishing and digital content', true, now(), now()),
+(108, 'Manufacturing', 'industry', NULL, 'Production and industrial operations', true, now(), now()),
+(109, 'Non-Profit', 'industry', NULL, 'Charitable organizations', true, now(), now());
 
 -- Tag Positions (Filter groups)
 INSERT INTO tag_positions (id, tag_id, position, sort_order, is_shown, priority, created_at, updated_at)
@@ -263,9 +257,9 @@ VALUES
 (204, 104, 'job_search_filter', 1, true, 40, now(), now()),
 (205, 105, 'job_search_filter', 2, true, 40, now(), now()),
 (206, 106, 'job_search_filter', 3, true, 40, now(), now()),
-(207, 107, 'job_search_filter', 1, true, 40, now(), now()),
-(208, 108, 'job_search_filter', 1, true, 30, now(), now()),
-(209, 109, 'job_search_filter', 2, true, 30, now(), now());
+(207, 107, 'job_search_filter', 4, true, 40, now(), now()),
+(208, 108, 'job_search_filter', 5, true, 40, now(), now()),
+(209, 109, 'job_search_filter', 6, true, 40, now(), now());
 
 -- Tag Positions Tag Search (Linking tags to their filter groups)
 INSERT INTO tag_positions_tag_search (id, tag_position_id, tag_search_id, sort, created_at, updated_at)
@@ -286,12 +280,10 @@ VALUES
 (11, 3, 11, 2, now(), now()),
 (12, 3, 12, 3, now(), now()),
 (13, 3, 13, 4, now(), now()),
--- Backend / Frontend / Fullstack belong to Software Development
+-- Industries relationships
 (14, 204, 100, 1, now(), now()),
-(15, 205, 100, 2, now(), now()),
+(15, 205, 101, 2, now(), now()),
 (16, 206, 100, 3, now(), now()),
--- Financial Analyst belongs to Finance
-(17, 207, 101, 1, now(), now()),
--- Java & Python Backend belong to Backend Developer
-(18, 208, 104, 1, now(), now()),
-(19, 209, 104, 2, now(), now());
+(17, 207, 100, 4, now(), now()),
+(18, 208, 100, 5, now(), now()),
+(19, 209, 100, 6, now(), now());
