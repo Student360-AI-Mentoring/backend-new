@@ -1,4 +1,4 @@
-  import { StudentId } from '../../domain/student-id';
+import { StudentId } from '../../domain/student-id';
 
 export abstract class StudentIdRepository {
   abstract create(data: Omit<StudentId, 'createdAt' | 'updatedAt'>): Promise<StudentId>;

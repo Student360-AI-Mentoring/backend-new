@@ -13,6 +13,7 @@ RUN npm ci && npm cache clean --force
 
 # Copy source code
 COPY src ./src
+COPY initdb ./initdb
 
 # Build application
 RUN npm run build
@@ -40,6 +41,7 @@ COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
 # Copy source (needed for TypeORM CLI and seeds) and built application
 COPY --from=builder --chown=nestjs:nodejs /app/src ./src
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
+COPY --from=builder --chown=nestjs:nodejs /app/initdb ./initdb
 
 # Copy entrypoint and helper scripts
 COPY --chown=nestjs:nodejs docker-entrypoint.sh ./docker-entrypoint.sh

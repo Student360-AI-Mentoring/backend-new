@@ -16,8 +16,9 @@ import appConfig from './config/app.config';
 import databaseConfig from './database/config/database-config';
 import throttlerConfig from './config/throttler.config';
 import { TypeOrmConfigService } from './database/typeorm-config.service';
-import { StudentIdsModule } from './modules/student-ids/student-ids.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { StudentIdsModule } from './modules/student-ids/student-ids.module';
+import { JobsModule } from './modules/jobs/jobs.module';
 import { AllConfigType } from './config/all-config.type';
 
 const infrastructureDatabaseModule = TypeOrmModule.forRootAsync({
@@ -49,6 +50,7 @@ const infrastructureDatabaseModule = TypeOrmModule.forRootAsync({
     infrastructureDatabaseModule,
     AuthModule,
     StudentIdsModule,
+    JobsModule,
   ],
   providers: [
     TypeOrmConfigService,

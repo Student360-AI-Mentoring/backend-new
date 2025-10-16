@@ -16,10 +16,16 @@ class EnvironmentVariablesValidator {
 }
 
 export default registerAs<ThrottlerConfig>('throttler', () => {
-  validateConfig(process.env, EnvironmentVariablesValidator);
+  const envValues: Record<string, unknown> = {
+    ...process.env,
+    THROTTLE_TTL: process.env.THROTTLE_TTL ?? '60',
+    THROTTLE_LIMIT: process.env.THROTTLE_LIMIT ?? '10',
+  };
+
+  validateConfig(envValues, EnvironmentVariablesValidator);
 
   return {
-    ttl: parseInt(process.env.THROTTLE_TTL || '60', 10), // Time to live in seconds (default: 60s)
-    limit: parseInt(process.env.THROTTLE_LIMIT || '10', 10), // Max requests per TTL (default: 10)
+    ttl: parseInt(envValues.THROTTLE_TTL as string, 10), // Time to live in seconds (default: 60s)
+    limit: parseInt(envValues.THROTTLE_LIMIT as string, 10), // Max requests per TTL (default: 10)
   };
 });

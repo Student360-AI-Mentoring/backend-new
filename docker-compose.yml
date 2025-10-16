@@ -17,8 +17,8 @@ services:
       DATABASE_WAIT_TIMEOUT: ${DATABASE_WAIT_TIMEOUT:-60}
       JWT_SECRET: ${JWT_SECRET:-development-jwt-secret-change-in-production}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-24h}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
-      SWAGGER_ENABLED: ${SWAGGER_ENABLED:-true}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      SWAGGER_ENABLED: ${SWAGGER_ENABLED:-false}
     depends_on:
       db:
         condition: service_healthy

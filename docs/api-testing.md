@@ -22,6 +22,10 @@ Cách dễ nhất để kiểm thử API là thông qua Swagger UI:
 - `PUT /api/student-ids/{id}` - Cập nhật student ID
 - `DELETE /api/student-ids/{id}` - Xóa student ID
 
+### Mô-đun Jobs
+- `GET /api/jobs` - Liệt kê job đang hoạt động kèm thông tin công ty, danh mục, địa điểm
+  - Query hỗ trợ: `page`, `limit`, `search`, `companyId`, `categoryId`, `locationId`, `employmentType`, `experienceLevel`, `isActive`
+
 ## Sử dụng Swagger UI
 
 ### Quy trình kiểm thử:
